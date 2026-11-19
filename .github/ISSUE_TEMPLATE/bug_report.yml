@@ -1,0 +1,36 @@
+name: Bug report
+description: Something doesn't work as expected
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: code
+    attributes:
+      label: Code
+      description: The smallest code that shows the problem. Leave your API key out.
+      render: ts
+  - type: textarea
+    id: response
+    attributes:
+      label: Google's response
+      description: The response body or MapsError (code, status, message), if there was one.
+  - type: input
+    id: versions
+    attributes:
+      label: Versions
+      placeholder: mapsfetch 0.1.0, Node 22 (or Bun, Deno, Cloudflare Workers, ...)
+    validations:
+      required: true
+  - type: dropdown
+    id: entry
+    attributes:
+      label: Which import
+      options:
+        - mapsfetch
+        - mapsfetch/compat

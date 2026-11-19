@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Google Maps Platform support
+    url: https://developers.google.com/maps/support
+    about: Billing, API keys, quotas and API behaviour are for Google, not this project.

@@ -1,0 +1,84 @@
+{
+  "name": "mapsfetch",
+  "version": "0.1.0",
+  "description": "Small fetch-based client for Google Maps Platform's new APIs (Places, Routes, Geocoding) that runs anywhere fetch does, with a drop-in replacement for @googlemaps/google-maps-services-js",
+  "license": "MIT",
+  "author": "Ninad Sutrave",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ninadsutrave/mapsfetch.git"
+  },
+  "homepage": "https://github.com/ninadsutrave/mapsfetch#readme",
+  "bugs": {
+    "url": "https://github.com/ninadsutrave/mapsfetch/issues"
+  },
+  "keywords": [
+    "google-maps",
+    "google-maps-services-js",
+    "places-api",
+    "places-api-new",
+    "routes-api",
+    "directions",
+    "distance-matrix",
+    "geocoding",
+    "fetch",
+    "edge",
+    "cloudflare-workers",
+    "deno",
+    "bun"
+  ],
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./compat": {
+      "import": {
+        "types": "./dist/compat.d.ts",
+        "default": "./dist/compat.js"
+      },
+      "require": {
+        "types": "./dist/compat.d.cts",
+        "default": "./dist/compat.cjs"
+      }
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "compat"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "prepublishOnly": "npm run typecheck && npm test && npm run build && npm run lint:package",
+    "changeset": "changeset",
+    "release": "npm run build && changeset publish",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint:package": "publint"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.29.0",
+    "prettier": "^3.10.1",
+    "publint": "^0.3.25",
+    "tsup": "^8.5.0",
+    "typescript": "^5.8.0",
+    "vitest": "^3.2.0"
+  }
+}
