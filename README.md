@@ -23,7 +23,7 @@ const { routes } = await maps.routes.compute({ origin: 'Pune', destination: 'Mum
 
 - **The legacy APIs are closed to new projects.** Since October 2026, Places API (Legacy), Directions API (Legacy) and Distance Matrix API (Legacy) can no longer be enabled on new Google Cloud projects. `@googlemaps/google-maps-services-js` calls those APIs, so it doesn't work for a new project.
 - **Google's replacements are heavy.** The official clients for the new APIs (`@googlemaps/places`, `@googlemaps/routing`) are built on gRPC. Installing those two adds 37 MB to `node_modules`. `google-maps-fetch` is about 4.3 kB gzipped, and the compat layer about 12 kB.
-- **It runs where your code runs.** It only needs `fetch`, `AbortController` and `crypto.randomUUID`. CI checks Node 20, 22 and 24. Before release, the same build was run in Bun, Deno, Cloudflare's `workerd` and Vercel's Edge Runtime.
+- **It runs where your code runs.** It only needs `fetch`, `AbortController` and `crypto.randomUUID`. It's tested on Node 20, 22 and 26. Before release, the same build was run in Bun, Deno, Cloudflare's `workerd` and Vercel's Edge Runtime.
 
 ## Install
 
