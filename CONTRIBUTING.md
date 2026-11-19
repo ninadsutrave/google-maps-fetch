@@ -28,6 +28,15 @@ npm install
 
 The tests run against a fake `fetch` (`test/helpers.ts`) that records each request, so you don't need an API key. Test the request mapping and the response mapping separately, and when you can, base response fixtures on real responses from Google.
 
+There is also a small live suite in `test/live` that calls Google's real APIs, about 25 requests per run. It needs a key with Places API (New), Routes API and Geocoding API enabled:
+
+```sh
+echo "GOOGLE_MAPS_KEY=your-key" > .env.local   # git-ignored
+npm run test:live
+```
+
+`npm test` never runs it. Restrict the key to your IP address and give the project low quotas, since each run is billed like any other traffic (normally inside Google's free monthly allowance).
+
 The package only uses web-standard APIs (`fetch`, `AbortController`, `crypto.randomUUID`, `URLSearchParams`). Please don't import Node built-ins in `src`, so it keeps running on Workers, Deno and other edge runtimes.
 
 ## Pull requests

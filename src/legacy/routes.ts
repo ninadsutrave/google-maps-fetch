@@ -85,7 +85,9 @@ const routeOptions = (p: CommonParams): { options: Options; trafficAware: boolea
       avoidIndoor: p.avoid.includes('indoor') || undefined,
     })
   }
-  if (p.language) options.languageCode = p.language
+  // the legacy APIs answered in English by default; the Routes API instead guesses from the origin
+  // (it returned Assamese for Pune), so keep English unless asked otherwise
+  options.languageCode = p.language ?? 'en'
   if (p.region) options.regionCode = p.region
   if (p.units) options.units = p.units.toUpperCase()
   return { options, trafficAware }

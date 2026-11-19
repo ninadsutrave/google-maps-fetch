@@ -66,6 +66,7 @@
     "build": "tsup",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "test:live": "vitest run --config vitest.live.config.ts",
     "prepublishOnly": "npm run typecheck && npm test && npm run build && npm run lint:package",
     "changeset": "changeset",
     "release": "npm run build && changeset publish",

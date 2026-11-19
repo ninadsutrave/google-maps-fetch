@@ -66,9 +66,11 @@ const { routes = [] } = await maps.routes.compute({
   origin: 'Pune Railway Station',
   destination: { lat: 19.076, lng: 72.8777 },
   travelMode: 'DRIVE',
+  languageCode: 'en',
 })
-routes[0].distanceMeters // 148000
-seconds(routes[0].duration) // 10800
+routes[0].distanceMeters // e.g. 151000
+seconds(routes[0].duration) // e.g. 10800
+routes[0].localizedValues?.distance?.text // "151 km"
 
 // every origin to every destination; match results by index
 const elements = await maps.routes.matrix({
@@ -77,6 +79,8 @@ const elements = await maps.routes.matrix({
 })
 for (const e of elements) console.log(e.originIndex, e.destinationIndex, e.distanceMeters)
 ```
+
+Pass `languageCode` when you show `localizedValues` text. Without it, the Routes API picks a language from the origin: for a route from Pune it answered in Assamese script ("১৫১ কিল’মিটাৰ").
 
 ### Geocoding
 
@@ -164,6 +168,7 @@ Requests take the same `params` and return `{ data, status, statusText, headers,
 - **Errors.** API errors resolve with a legacy status in `data.status` (`REQUEST_DENIED`, `INVALID_REQUEST`, `OVER_QUERY_LIMIT`, `NOT_FOUND`, `UNKNOWN_ERROR`) and `data.error_message`, which is how the legacy APIs reported them. Network errors and timeouts throw.
 - **`placeDetails` without `fields`.** The legacy API returned every field and billed for all of them. This defaults to `place_id, formatted_address, geometry, address_components` (Essentials). Pass `fields` for anything else; legacy field names are mapped.
 - **Addresses in routes.** The Routes API doesn't geocode inputs back to addresses. `start_address`, `end_address`, `origin_addresses` and `destination_addresses` repeat what you passed: the address string, `"lat,lng"` for coordinates, or `""` for a place ID. `geocoded_waypoints` is empty.
+- **Language.** `directions` and `distancematrix` ask for English unless you pass `language`, as the legacy APIs did. Left to itself, the Routes API picks a language from the origin.
 - **Autocomplete `types`.** `(cities)` and `(regions)` work as before, and `address` becomes street-level types. `geocode` and `establishment` have no equivalent in the new API, so no type filter is applied.
 - **`placesNearby` with keyword, name, price, open-now or a page token** runs a Text Search inside the circle, because Nearby Search (New) has none of those. That's a different billing SKU.
 - **Photos.** `photo_reference` in results is now a photo name (`places/.../photos/...`). `placePhoto` accepts those and returns an `ArrayBuffer`. Old-style references don't work.

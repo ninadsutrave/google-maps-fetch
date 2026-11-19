@@ -445,6 +445,7 @@ describe('directions', () => {
       departureTime: '2030-01-01T09:00:00.000Z',
       trafficModel: 'PESSIMISTIC',
     })
+    expect(calls[0].body.languageCode).toBe('en')
     expect(calls[1].body).not.toHaveProperty('routingPreference')
     expect(calls[1].body).not.toHaveProperty('departureTime')
     expect(calls[2].body).toMatchObject({
@@ -553,6 +554,7 @@ describe('distancematrix', () => {
     expect(calls[0].body).toEqual({
       travelMode: 'DRIVE',
       routingPreference: 'TRAFFIC_AWARE',
+      languageCode: 'en',
       units: 'IMPERIAL',
       origins: [
         { waypoint: { address: 'Pune' }, routeModifiers: { avoidHighways: true } },
