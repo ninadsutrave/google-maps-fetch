@@ -4,11 +4,13 @@ export interface Call {
   url: string
   method: string
   headers: Record<string, string>
+  // tests read nested request fields freely
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   body?: any
   signal?: AbortSignal
 }
 
-export type Reply = { status?: number; body?: unknown } | Error
+export type Reply = { status?: number; body?: unknown; headers?: Record<string, string> } | Error
 
 /** A fetch that records each request and answers with whatever the handler returns */
 export function mockFetch(handler: (call: Call, index: number) => Reply | Promise<Reply> = () => ({ body: {} })) {
@@ -25,7 +27,7 @@ export function mockFetch(handler: (call: Call, index: number) => Reply | Promis
     const reply = await handler(call, calls.length - 1)
     if (reply instanceof Error) throw reply
     const body = reply.body === undefined ? '' : typeof reply.body === 'string' ? reply.body : JSON.stringify(reply.body)
-    return new Response(body, { status: reply.status ?? 200 })
+    return new Response(body, { status: reply.status ?? 200, headers: reply.headers })
   })
   return { fetch, calls }
 }

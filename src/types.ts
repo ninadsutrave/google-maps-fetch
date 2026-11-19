@@ -149,7 +149,15 @@ export interface Place {
   editorialSummary?: LocalizedText
   iconMaskBaseUri?: string
   iconBackgroundColor?: string
+  accessibilityOptions?: { wheelchairAccessibleEntrance?: boolean; [field: string]: unknown }
+  /** Hours for a sub-service such as DRIVE_THROUGH or DELIVERY */
+  regularSecondaryOpeningHours?: SecondaryOpeningHours[]
+  currentSecondaryOpeningHours?: SecondaryOpeningHours[]
   [field: string]: unknown
+}
+
+export interface SecondaryOpeningHours extends OpeningHours {
+  secondaryHoursType?: string
 }
 
 export interface GetPlaceOptions {

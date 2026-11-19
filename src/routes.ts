@@ -38,7 +38,10 @@ const toOrigin = (value: WaypointInput | RouteMatrixOrigin): RouteMatrixOrigin =
 const toDestination = (value: WaypointInput | RouteMatrixDestination): RouteMatrixDestination =>
   isMatrixEntry(value) ? value : { waypoint: toWaypoint(value) }
 
-const has = (fields: string | string[], field: string) => (Array.isArray(fields) ? fields : fields.split(',')).includes(field)
+const has = (fields: string | string[], field: string) => {
+  const list = (Array.isArray(fields) ? fields : fields.split(',')).map((f) => f.trim())
+  return list.includes('*') || list.includes(field)
+}
 
 export function createRoutes(send: Send) {
   const compute = (

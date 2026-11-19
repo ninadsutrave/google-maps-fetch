@@ -22,8 +22,8 @@ const { routes } = await maps.routes.compute({ origin: 'Pune', destination: 'Mum
 ## Why
 
 - **The legacy APIs are closed to new projects.** Since October 2026, Places API (Legacy), Directions API (Legacy) and Distance Matrix API (Legacy) can no longer be enabled on new Google Cloud projects. `@googlemaps/google-maps-services-js` calls those APIs, so it doesn't work for a new project.
-- **Google's replacements are heavy.** The official clients for the new APIs (`@googlemaps/places`, `@googlemaps/routing`) are built on gRPC. Installing those two adds 37 MB to `node_modules`. `google-maps-fetch` is about 4.3 kB gzipped, and the compat layer about 12 kB.
-- **It runs where your code runs.** It only needs `fetch`, `AbortController` and `crypto.randomUUID`. It's tested on Node 20, 22 and 26. Before release, the same build was run in Bun, Deno, Cloudflare's `workerd` and Vercel's Edge Runtime.
+- **Google's replacements are heavy.** The official clients for the new APIs (`@googlemaps/places`, `@googlemaps/routing`) are built on gRPC. Installing those two adds 37 MB to `node_modules`. `google-maps-fetch` is about 4.4 kB gzipped, and the compat layer about 12 kB.
+- **It runs where your code runs.** It only needs `fetch`, `AbortController` and `crypto.randomUUID`. It's tested on Node 20, 22, 24 and 26. Before release, the same build was run in Bun, Deno, Cloudflare's `workerd` and Vercel's Edge Runtime.
 
 ## Install
 
@@ -168,7 +168,13 @@ Google bills Place Details and searches by the most expensive field you ask for,
 | `routes.compute`      | distance, duration, polyline, localized text                     | Set by the request (traffic, waypoints), not the fields                                      |
 | `routes.matrix`       | indexes, status, condition, distance, durations, localized text  | Set by the request                                                                           |
 
-Use `places.session()` for autocomplete. It sends one session token with every keystroke and with the details call that ends the session, so Google bills them as one session rather than one request at a time ([session pricing](https://developers.google.com/maps/documentation/places/web-service/session-pricing)).
+Use `places.session()` for autocomplete. It sends one session token with every keystroke and with the details call that ends the session. What Google then charges depends on the fields that details call asks for ([session pricing](https://developers.google.com/maps/documentation/places/web-service/session-pricing)):
+
+- **Essentials fields only** (the `get` default): the first 12 autocomplete requests in the session are billed per request, any beyond that are free, and the details call is billed at Essentials.
+- **Any Pro or Enterprise field** (`displayName`, `rating`, phone numbers, ...): every autocomplete request is free, and the details call is billed at Enterprise + Atmosphere, whatever else you asked for.
+- **`fields: ['id']` only, or no details call**: every autocomplete request is billed per request.
+
+So for a box that only needs an address and coordinates, the default is the cheapest. If you need a display name or more, one details call at the top tier buys free autocomplete.
 
 ## Options
 
@@ -176,13 +182,13 @@ Use `places.session()` for autocomplete. It sends one session token with every k
 createClient({
   key: '...', // required
   fetch, // default: globalThis.fetch
-  timeout: 10_000, // ms per attempt
+  timeout: 10_000, // ms per attempt; 0 waits as long as it takes
   retries: 2, // extra attempts after a network error, timeout, 429 or 5xx
   headers: {}, // sent with every request
 })
 ```
 
-Every method also takes `{ signal, timeout }`, and the field-masked ones take `fields`. Cancelling through `signal` is never retried.
+Every method also takes `{ signal, timeout }`, and the field-masked ones take `fields`. Cancelling through `signal` is never retried. When Google answers with a `Retry-After` header, that wait is used instead of the backoff; if it asks for more than 30 seconds, the error is thrown straight away.
 
 ## Errors
 
@@ -231,13 +237,15 @@ Requests take the same `params` and return `{ data, status, statusText, headers,
 
 ### What's different
 
-- **Errors.** API errors resolve with a legacy status in `data.status` (`REQUEST_DENIED`, `INVALID_REQUEST`, `OVER_QUERY_LIMIT`, `NOT_FOUND`, `UNKNOWN_ERROR`) and `data.error_message`, which is how the legacy APIs reported them. Network errors and timeouts throw.
+- **Errors.** API errors resolve with a legacy status in `data.status` (`REQUEST_DENIED`, `INVALID_REQUEST`, `OVER_QUERY_LIMIT`, `NOT_FOUND`, `UNKNOWN_ERROR`) and `data.error_message`, which is how the legacy APIs reported them. That holds for the pass-through methods too. Network errors and timeouts throw a `MapsError`, and so does `placePhoto` when the image can't be fetched.
+- **Paging.** `next_page_token` works as before, including sending the token on its own: the client remembers the search that issued it. A token from another process needs the original parameters repeated.
 - **`placeDetails` without `fields`.** The legacy API returned every field and billed for all of them. This defaults to `place_id, formatted_address, geometry, address_components` (Essentials). Pass `fields` for anything else; legacy field names are mapped.
 - **Addresses in routes.** The Routes API doesn't geocode inputs back to addresses. `start_address`, `end_address`, `origin_addresses` and `destination_addresses` repeat what you passed: the address string, `"lat,lng"` for coordinates, or `""` for a place ID. `geocoded_waypoints` is empty.
 - **Language.** `directions` and `distancematrix` ask for English unless you pass `language`, as the legacy APIs did. Left to itself, the Routes API picks a language from the origin.
 - **Autocomplete `types`.** `(cities)` and `(regions)` work as before, and `address` becomes street-level types. `geocode` and `establishment` have no equivalent in the new API, so no type filter is applied.
 - **`placesNearby` with keyword, name, price, open-now or a page token** runs a Text Search inside the circle, because Nearby Search (New) has none of those. That's a different billing SKU.
 - **Photos.** `photo_reference` in results is now a photo name (`places/.../photos/...`). `placePhoto` accepts those and returns an `ArrayBuffer`. Old-style references don't work.
+- **`findPlaceFromText`** returns one candidate, as the legacy API did.
 - **Not supported:** `client_id` / URL signing, `enc:` polyline waypoints, and axios options other than `timeout`. Pass `config: { timeout, retries, headers }` to the constructor.
 
 ## Contributing

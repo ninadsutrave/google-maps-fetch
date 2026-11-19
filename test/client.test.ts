@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { createClient, MapsError, placeFields, seconds, toWaypoint } from '../src'
+import { retryAfter } from '../src/http'
 import { googleError, hang, mockFetch, query } from './helpers'
 
 const KEY = 'test-key'
@@ -233,6 +234,67 @@ describe('errors, retries and timeouts', () => {
     expect(fetch).toHaveBeenCalledTimes(2)
   })
 
+  it('takes its listeners off a shared signal once each attempt and wait is over', async () => {
+    const { fetch } = mockFetch((_, i) => (i % 2 === 0 ? googleError(503, 'UNAVAILABLE', 'try again') : { body: {} }))
+    const maps = createClient({ key: KEY, fetch })
+    const { signal } = new AbortController()
+    const added = vi.spyOn(signal, 'addEventListener')
+    const removed = vi.spyOn(signal, 'removeEventListener')
+    for (let i = 0; i < 5; i++) await maps.places.get('x', { signal })
+    expect(fetch).toHaveBeenCalledTimes(10)
+    // the signal never fired, so every listener added had to be taken off by hand
+    expect(added).toHaveBeenCalledTimes(15) // 10 attempts and 5 waits
+    expect(removed).toHaveBeenCalledTimes(15)
+  })
+
+  it('timeout: 0 waits as long as the request takes', async () => {
+    const { fetch } = mockFetch(() => new Promise((resolve) => setTimeout(() => resolve({ body: { id: 'slow' } }), 30)))
+    const maps = createClient({ key: KEY, fetch, timeout: 0 })
+    expect(await maps.places.get('x')).toEqual({ id: 'slow' })
+    expect(await maps.places.get('x', { timeout: 0 })).toEqual({ id: 'slow' })
+  })
+
+  it('reads the message and status from an array-shaped error body', async () => {
+    const { fetch } = mockFetch(() => ({
+      status: 400,
+      body: [{ error: { code: 400, message: 'origins required', status: 'INVALID_ARGUMENT' } }],
+    }))
+    const maps = createClient({ key: KEY, fetch })
+    await expect(maps.routes.matrix({ origins: [], destinations: [] })).rejects.toMatchObject({
+      status: 400,
+      code: 'INVALID_ARGUMENT',
+      message: 'origins required',
+    })
+  })
+
+  it('waits for Retry-After instead of the backoff', async () => {
+    const { fetch } = mockFetch((_, i) =>
+      i === 0 ? { ...googleError(429, 'RESOURCE_EXHAUSTED', 'Quota exceeded'), headers: { 'retry-after': '1' } } : { body: { id: 'ok' } },
+    )
+    const maps = createClient({ key: KEY, fetch })
+    const started = Date.now()
+    expect(await maps.places.get('x')).toEqual({ id: 'ok' })
+    expect(Date.now() - started).toBeGreaterThanOrEqual(950)
+    expect(fetch).toHaveBeenCalledTimes(2)
+  })
+
+  it('does not retry when Retry-After is further off than a retry could help', async () => {
+    const { fetch } = mockFetch(() => ({ ...googleError(429, 'RESOURCE_EXHAUSTED', 'Quota exceeded'), headers: { 'retry-after': '60' } }))
+    const maps = createClient({ key: KEY, fetch })
+    await expect(maps.places.get('x')).rejects.toMatchObject({ status: 429, code: 'RESOURCE_EXHAUSTED' })
+    expect(fetch).toHaveBeenCalledTimes(1)
+  })
+
+  it('reads Retry-After as seconds or an HTTP date', () => {
+    expect(retryAfter(null)).toBeUndefined()
+    expect(retryAfter('garbage')).toBeUndefined()
+    expect(retryAfter('2')).toBe(2000)
+    const soon = retryAfter(new Date(Date.now() + 5000).toUTCString())!
+    expect(soon).toBeGreaterThan(3000)
+    expect(soon).toBeLessThanOrEqual(5000)
+    expect(retryAfter(new Date(Date.now() - 5000).toUTCString())).toBe(0)
+  })
+
   it('gives up after the configured retries', async () => {
     const { fetch } = mockFetch(() => googleError(429, 'RESOURCE_EXHAUSTED', 'Quota exceeded'))
     const maps = createClient({ key: KEY, fetch, retries: 1 })
@@ -319,5 +381,29 @@ describe('errors, retries and timeouts', () => {
     } finally {
       globalThis.fetch = original
     }
+  })
+})
+
+describe('older JSON APIs', () => {
+  it('reads status and error_message from a 4xx body in the older format', async () => {
+    const { fetch } = mockFetch(() => ({
+      status: 403,
+      body: { status: 'REQUEST_DENIED', error_message: 'The provided API key is invalid.' },
+    }))
+    const maps = createClient({ key: KEY, fetch })
+    await expect(maps.geocode({ address: 'x' })).rejects.toMatchObject({
+      status: 403,
+      code: 'REQUEST_DENIED',
+      message: 'The provided API key is invalid.',
+    })
+  })
+
+  it('matrix fills in indexes for "*" and for fields with spaces', async () => {
+    const { fetch } = mockFetch(() => ({ body: [{ distanceMeters: 1 }] }))
+    const maps = createClient({ key: KEY, fetch })
+    const [a] = await maps.routes.matrix({ origins: ['A'], destinations: ['B'] }, { fields: '*' })
+    const [b] = await maps.routes.matrix({ origins: ['A'], destinations: ['B'] }, { fields: 'originIndex, destinationIndex' })
+    expect(a).toEqual({ distanceMeters: 1, originIndex: 0, destinationIndex: 0 })
+    expect(b).toEqual({ distanceMeters: 1, originIndex: 0, destinationIndex: 0 })
   })
 })

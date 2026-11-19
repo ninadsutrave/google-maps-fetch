@@ -1,5 +1,20 @@
 import { describe, expect, it } from 'vitest'
-import { Client, MapsError, PlaceAutocompleteType, Status, TravelMode, TravelRestriction, UnitSystem } from '../src/compat'
+import {
+  AddressType,
+  Client,
+  DirectionsReponseStatus,
+  Language,
+  Maneuver,
+  MapsError,
+  PlaceAutocompleteType,
+  PlaceType1,
+  PlaceType2,
+  Status,
+  TransitRoutingPreference,
+  TravelMode,
+  TravelRestriction,
+  UnitSystem,
+} from '../src/compat'
 import { googleError, mockFetch, query } from './helpers'
 
 const key = 'test-key'
@@ -343,6 +358,7 @@ describe('searches', () => {
     expect(calls[0].headers['X-Goog-FieldMask']).toBe('places.id')
     expect(calls[0].body).toEqual({
       textQuery: 'Aga Khan Palace',
+      pageSize: 1,
       locationBias: { circle: { center: { latitude: 18.55, longitude: 73.9 }, radius: 2000 } },
     })
     expect(calls[1].headers['X-Goog-FieldMask']).toBe('places.displayName,places.formattedAddress')
@@ -636,12 +652,18 @@ describe('APIs that are not legacy pass through unchanged', () => {
     expect(query(calls[1].url)).toEqual({ path: '1,2|3,4', interpolate: 'true', key })
   })
 
-  it('an HTTP error from a passthrough API throws with an axios-like response', async () => {
+  it('an HTTP error from a passthrough API resolves with a legacy status, like the other methods', async () => {
     const { fetch } = mockFetch(() => googleError(400, 'INVALID_ARGUMENT', 'Invalid path'))
-    const error = await new Client({ fetch }).snapToRoads({ params: { key, path: ['x'] } }).catch((e) => e)
+    const res = await new Client({ fetch }).snapToRoads({ params: { key, path: ['x'] } })
+    expect(res.status).toBe(400)
+    expect(res.data).toEqual({ snappedPoints: [], status: Status.INVALID_REQUEST, error_message: 'Invalid path' })
+  })
+
+  it('a network error from a passthrough API still throws', async () => {
+    const { fetch } = mockFetch(() => new Error('socket hang up'))
+    const error = await new Client({ fetch, config: { retries: 0 } }).geocode({ params: { key, address: 'x' } }).catch((e) => e)
     expect(error).toBeInstanceOf(MapsError)
-    expect(error.response.status).toBe(400)
-    expect(error.response.data.error.message).toBe('Invalid path')
+    expect(error.code).toBe('NETWORK_ERROR')
   })
 })
 
@@ -704,5 +726,107 @@ describe('client', () => {
     expect(auto.data.status).toBe(Status.OK)
     expect(details.data.result.name).toBe('Vaishali')
     expect(dir.data.routes[0].legs[0].distance.text).toBe('1 km')
+  })
+})
+
+describe('paging with only a pagetoken', () => {
+  it('textSearch replays the request that issued the token', async () => {
+    const { fetch, calls } = mockFetch((_, i) =>
+      i === 0 ? { body: { places: [{ id: 'a' }], nextPageToken: 'tok1' } } : { body: { places: [{ id: 'b' }] } },
+    )
+    const client = new Client({ fetch })
+    const first = await client.textSearch({ params: { key, query: 'misal in Pune', region: 'in', opennow: true } })
+    expect(first.data.next_page_token).toBe('tok1')
+    const second = await client.textSearch({ params: { key, pagetoken: 'tok1' } })
+    expect(second.data.status).toBe(Status.OK)
+    expect(second.data.results[0].place_id).toBe('b')
+    expect(calls[1].body).toEqual({ textQuery: 'misal in Pune', regionCode: 'in', openNow: true, pageToken: 'tok1' })
+  })
+
+  it('placesNearby replays the text search behind a keyword search', async () => {
+    const { fetch, calls } = mockFetch((_, i) =>
+      i === 0 ? { body: { places: [{ id: 'a' }], nextPageToken: 'tok2' } } : { body: { places: [] } },
+    )
+    const client = new Client({ fetch })
+    await client.placesNearby({ params: { key, location: [18.52, 73.85], radius: 500, keyword: 'cafe' } })
+    const page = await client.placesNearby({ params: { key, pagetoken: 'tok2' } as never })
+    expect(page.data.status).toBe(Status.ZERO_RESULTS)
+    expect(calls[1].body.textQuery).toBe('cafe')
+    expect(calls[1].body.pageToken).toBe('tok2')
+    expect(calls[1].body.locationRestriction).toBeDefined()
+  })
+
+  it('a token this client did not issue resolves INVALID_REQUEST when there is nothing else to go on', async () => {
+    const { fetch } = mockFetch()
+    const res = await new Client({ fetch }).placesNearby({ params: { key, pagetoken: 'stranger' } as never })
+    expect(res.data.status).toBe(Status.INVALID_REQUEST)
+    expect(res.data.error_message).toMatch(/pagetoken/)
+    expect(fetch).not.toHaveBeenCalled()
+  })
+})
+
+describe('legacy names', () => {
+  it('exports the enums the legacy client did', () => {
+    expect(Language.en).toBe('en')
+    expect(PlaceType1.restaurant).toBe('restaurant')
+    expect(PlaceType2.locality).toBe('locality')
+    expect(AddressType.street_address).toBe('street_address')
+    expect(TransitRoutingPreference.less_walking).toBe('less_walking')
+    expect(Maneuver.turn_left).toBe('turn-left')
+    expect(DirectionsReponseStatus.OK).toBe('OK')
+  })
+
+  it('accepts fields as a comma string, and maps the ones with new names', async () => {
+    const { fetch, calls } = mockFetch(() => ({ body: {} }))
+    await new Client({ fetch }).placeDetails({
+      params: { key, place_id: 'p', fields: 'name, secondary_opening_hours,wheelchair_accessible_entrance,scope,icon' as never },
+    })
+    expect(calls[0].headers['X-Goog-FieldMask']).toBe(
+      'displayName,regularSecondaryOpeningHours,currentSecondaryOpeningHours,accessibilityOptions,iconMaskBaseUri',
+    )
+  })
+
+  it('maps secondary hours, wheelchair access and the icon back', async () => {
+    const { fetch } = mockFetch(() => ({
+      body: {
+        iconMaskBaseUri: 'https://maps.gstatic.com/mapfiles/place_api/icons/v2/cafe_pinlet',
+        accessibilityOptions: { wheelchairAccessibleEntrance: true },
+        regularSecondaryOpeningHours: [
+          {
+            secondaryHoursType: 'DRIVE_THROUGH',
+            periods: [{ open: { day: 1, hour: 7, minute: 0 } }],
+            weekdayDescriptions: ['Monday: 7 AM'],
+          },
+        ],
+      },
+    }))
+    const { data } = await new Client({ fetch }).placeDetails({ params: { key, place_id: 'p', fields: ['icon'] } })
+    expect(data.result.icon).toBe('https://maps.gstatic.com/mapfiles/place_api/icons/v2/cafe_pinlet.png')
+    expect(data.result.wheelchair_accessible_entrance).toBe(true)
+    expect(data.result.secondary_opening_hours).toEqual([
+      { type: 'DRIVE_THROUGH', periods: [{ open: { day: 1, time: '0700' } }], weekday_text: ['Monday: 7 AM'] },
+    ])
+  })
+
+  it('coordinates show up as "lat,lng" in directions addresses, place IDs as ""', async () => {
+    const { fetch } = mockFetch(() => ({
+      body: {
+        routes: [
+          {
+            legs: [
+              { distanceMeters: 1, staticDuration: '1s' },
+              { distanceMeters: 1, staticDuration: '1s' },
+            ],
+          },
+        ],
+      },
+    }))
+    const { data } = await new Client({ fetch }).directions({
+      params: { key, origin: { lat: 18.52, lng: 73.85 }, destination: 'place_id:abc', waypoints: ['FC Road, Pune'] },
+    })
+    expect(data.routes[0].legs.map((l) => [l.start_address, l.end_address])).toEqual([
+      ['18.52,73.85', 'FC Road, Pune'],
+      ['FC Road, Pune', ''],
+    ])
   })
 })

@@ -51,11 +51,15 @@ export const toWaypoint = (value: LegacyLatLng): Waypoint => {
   return via ? { ...point, via: true } : point
 }
 
-/** The address a legacy waypoint was given as, if any, for start_address / end_address */
+/**
+ * What to show for a legacy waypoint in start_address, end_address and the matrix address lists. The Routes API doesn't
+ * geocode inputs back to addresses, so this echoes the address string, "lat,lng" for coordinates, or "" for a place ID.
+ */
 export const addressOf = (value: LegacyLatLng | undefined) => {
-  if (typeof value !== 'string') return ''
+  if (value === undefined) return ''
+  if (typeof value !== 'string') return latLngString(value)
   const v = value.startsWith('via:') ? value.slice(4) : value
-  return v.startsWith('place_id:') || parseLatLng(v) ? '' : v
+  return v.startsWith('place_id:') ? '' : v
 }
 
 const metresPerDegree = 111_320
@@ -128,9 +132,12 @@ const priceLevels = [
   'PRICE_LEVEL_VERY_EXPENSIVE',
 ]
 
-/** minprice/maxprice (0-4) to priceLevels. Free isn't accepted as a filter, so the range starts at 1. */
-export const priceRange = (min?: number, max?: number) =>
-  min == null && max == null ? undefined : priceLevels.slice(Math.max(min ?? 0, 1), (max ?? 4) + 1)
+/** minprice/maxprice (0-4) to priceLevels. Free isn't accepted as a filter, so the range starts at 1; an empty range is no filter. */
+export const priceRange = (min?: number, max?: number) => {
+  if (min == null && max == null) return undefined
+  const levels = priceLevels.slice(Math.max(min ?? 0, 1), (max ?? 4) + 1)
+  return levels.length ? levels : undefined
+}
 
 export const priceLevelNumber = (level: string | undefined) => {
   const i = level ? priceLevels.indexOf(level) : -1

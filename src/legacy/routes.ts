@@ -1,7 +1,7 @@
 // Legacy Directions and Distance Matrix requests and responses, mapped to and from the Routes API
 import type { ComputeRouteMatrixRequest, ComputeRoutesRequest, Route, RouteMatrixElement } from '../types'
 import { seconds } from '../util'
-import { addressOf, latLngString, strip, toLiteral, toWaypoint, type LatLngBounds, type LatLngLiteral, type LegacyLatLng } from './params'
+import { addressOf, strip, toLiteral, toWaypoint, type LatLngBounds, type LatLngLiteral, type LegacyLatLng } from './params'
 
 interface CommonParams {
   /** driving (default), walking, bicycling or transit */
@@ -287,17 +287,11 @@ const toElement = (e: RouteMatrixElement, trafficAware: boolean): DistanceMatrix
   })
 }
 
-// the Routes API doesn't geocode inputs back to addresses; echo what was given
-const label = (value: LegacyLatLng) => {
-  if (typeof value !== 'string') return latLngString(value)
-  return value.startsWith('place_id:') ? '' : value.replace(/^via:/, '')
-}
-
 export const toLegacyMatrix = (elements: RouteMatrixElement[], p: DistanceMatrixParams, trafficAware: boolean) => {
   const rows = p.origins.map(() => ({ elements: p.destinations.map((): DistanceMatrixElement => ({ status: 'NOT_FOUND' })) }))
   for (const e of elements) {
     const row = rows[e.originIndex]
     if (row && e.destinationIndex < row.elements.length) row.elements[e.destinationIndex] = toElement(e, trafficAware)
   }
-  return { origin_addresses: p.origins.map(label), destination_addresses: p.destinations.map(label), rows }
+  return { origin_addresses: p.origins.map(addressOf), destination_addresses: p.destinations.map(addressOf), rows }
 }

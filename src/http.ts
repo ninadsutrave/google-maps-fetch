@@ -5,7 +5,7 @@ export interface ClientOptions {
   key: string
   /** Defaults to the global fetch */
   fetch?: FetchLike
-  /** Milliseconds before a single attempt is abandoned. Default 10000 */
+  /** Milliseconds before a single attempt is abandoned. Default 10000; 0 waits as long as it takes */
   timeout?: number
   /** Extra attempts after a network error, timeout, 429 or 5xx. Default 2 */
   retries?: number
@@ -15,7 +15,7 @@ export interface ClientOptions {
 
 export interface CallOptions {
   signal?: AbortSignal
-  /** Overrides the client's timeout for this call */
+  /** Overrides the client's timeout for this call; 0 waits as long as it takes */
   timeout?: number
 }
 
@@ -90,19 +90,32 @@ const parse = (text: string): unknown => {
 const wait = (ms: number, signal?: AbortSignal) =>
   new Promise<void>((resolve, reject) => {
     if (signal?.aborted) return reject(signal.reason)
-    const timer = setTimeout(resolve, ms)
-    signal?.addEventListener(
-      'abort',
-      () => {
-        clearTimeout(timer)
-        reject(signal.reason)
-      },
-      { once: true },
-    )
+    const onAbort = () => {
+      clearTimeout(timer)
+      reject(signal?.reason)
+    }
+    // taken off again once the wait is over, so a signal shared across many calls doesn't collect listeners
+    const timer = setTimeout(() => {
+      signal?.removeEventListener('abort', onAbort)
+      resolve()
+    }, ms)
+    signal?.addEventListener('abort', onAbort, { once: true })
   })
 
 // 250ms, 500ms, 1s... with a little jitter so parallel callers don't retry in step
 const backoff = (attempt: number) => 250 * 2 ** attempt + Math.random() * 100
+
+// Longest Retry-After worth waiting for. A quota that clears later than this isn't going to be helped by a retry.
+const maxRetryAfter = 30_000
+
+/** Milliseconds from a Retry-After header (seconds or an HTTP date), or undefined when there isn't a usable one */
+export const retryAfter = (value: string | null): number | undefined => {
+  if (!value) return undefined
+  const s = Number(value)
+  if (!Number.isNaN(s)) return Math.max(0, s * 1000)
+  const date = Date.parse(value)
+  return Number.isNaN(date) ? undefined : Math.max(0, date - Date.now())
+}
 
 export function createTransport({ key, fetch: f = globalThis.fetch, timeout = 10_000, retries = 2, headers = {} }: ClientOptions): Send {
   if (!key) throw new Error('google-maps-fetch: an API key is required')
@@ -121,14 +134,18 @@ export function createTransport({ key, fetch: f = globalThis.fetch, timeout = 10
       if (call.signal?.aborted) throw call.signal.reason
       const controller = new AbortController()
       let timedOut = false
-      const timer = setTimeout(() => {
-        timedOut = true
-        controller.abort()
-      }, ms)
+      const timer =
+        ms > 0
+          ? setTimeout(() => {
+              timedOut = true
+              controller.abort()
+            }, ms)
+          : undefined
       const onAbort = () => controller.abort()
       call.signal?.addEventListener('abort', onAbort, { once: true })
 
       let error: MapsError
+      let delay: number | undefined
       try {
         const res = await f(url, {
           method,
@@ -139,9 +156,20 @@ export function createTransport({ key, fetch: f = globalThis.fetch, timeout = 10
         const text = await res.text()
         const data = text ? parse(text) : undefined
         if (res.ok) return data as T
-        const e = (data as { error?: { message?: string; status?: string } } | undefined)?.error
-        error = new MapsError(e?.message ?? `HTTP ${res.status}`, res.status, e?.status ?? httpCodes[res.status] ?? 'UNKNOWN', data)
+        // the Routes matrix endpoint answers as an array, errors included; the older JSON APIs put status and error_message at the top
+        const payload = (Array.isArray(data) ? data[0] : data) as
+          { error?: { message?: string; status?: string }; status?: string; error_message?: string } | undefined
+        const e = payload?.error
+        error = new MapsError(
+          e?.message ?? payload?.error_message ?? `HTTP ${res.status}`,
+          res.status,
+          e?.status ?? payload?.status ?? httpCodes[res.status] ?? 'UNKNOWN',
+          data,
+        )
         if (!retryable.has(res.status)) throw error
+        delay = retryAfter(res.headers.get('retry-after'))
+        // Google says when to come back; if that's too far off, a retry won't help
+        if (delay !== undefined && delay > maxRetryAfter) throw error
       } catch (e) {
         if (e instanceof MapsError) throw e
         // the caller cancelled: don't retry, rethrow their reason
@@ -154,7 +182,7 @@ export function createTransport({ key, fetch: f = globalThis.fetch, timeout = 10
         call.signal?.removeEventListener('abort', onAbort)
       }
       if (attempt >= retries) throw error
-      await wait(backoff(attempt), call.signal)
+      await wait(delay ?? backoff(attempt), call.signal)
     }
   }
 }

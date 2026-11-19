@@ -7,6 +7,7 @@ import type {
   QueryPrediction,
   SearchNearbyRequest,
   SearchTextRequest,
+  SecondaryOpeningHours,
   StringRange,
 } from '../types'
 import {
@@ -167,17 +168,27 @@ const fieldMap: Record<string, string[]> = {
   review: ['reviews'],
   reviews: ['reviews'],
   editorial_summary: ['editorialSummary'],
+  secondary_opening_hours: ['regularSecondaryOpeningHours', 'currentSecondaryOpeningHours'],
+  wheelchair_accessible_entrance: ['accessibilityOptions'],
+  // legacy fields with nothing to fetch in the new API
+  id: [],
+  scope: [],
+  reference: [],
+  html_attributions: [],
 }
 
 const camel = (s: string) => s.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase())
 const snake = (s: string) => s.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`)
 
 /** Legacy field names (or new ones, passed through) to a field mask, with an optional prefix such as "places." */
-export const toFields = (fields: string[], prefix = '') => [
+export const toFields = (fields: string | string[], prefix = '') => [
   ...new Set(
-    fields
-      .flatMap((f) => (f.includes(',') ? f.split(',') : [f]))
-      .flatMap((f) => (fieldMap[f.trim()] ?? [camel(f.trim())]).map((n) => prefix + n)),
+    ([] as string[])
+      .concat(fields)
+      .flatMap((f) => f.split(','))
+      .map((f) => f.trim())
+      .filter(Boolean)
+      .flatMap((f) => (fieldMap[f] ?? [camel(f)]).map((n) => prefix + n)),
   ),
 ]
 
@@ -192,6 +203,7 @@ export interface LegacyPlace {
   adr_address?: string
   business_status?: string
   permanently_closed?: boolean
+  icon?: string
   icon_mask_base_uri?: string
   icon_background_color?: string
   plus_code?: { global_code?: string; compound_code?: string }
@@ -219,6 +231,8 @@ export interface LegacyPlace {
     time?: number
   }[]
   editorial_summary?: { overview: string; language?: string }
+  secondary_opening_hours?: (LegacyOpeningHours & { type?: string })[]
+  wheelchair_accessible_entrance?: boolean
   [field: string]: unknown
 }
 
@@ -270,7 +284,13 @@ const mapped = new Set([
   'photos',
   'reviews',
   'editorialSummary',
+  'accessibilityOptions',
+  'regularSecondaryOpeningHours',
+  'currentSecondaryOpeningHours',
 ])
+
+const toSecondaryHours = (hours: SecondaryOpeningHours[] | undefined) =>
+  hours?.map((h) => ({ ...toHours(h, undefined)!, type: h.secondaryHoursType }))
 
 export const toLegacyPlace = (p: Place): LegacyPlace => {
   const place: LegacyPlace = strip({
@@ -288,6 +308,8 @@ export const toLegacyPlace = (p: Place): LegacyPlace => {
     adr_address: p.adrFormatAddress,
     business_status: p.businessStatus,
     permanently_closed: p.businessStatus === 'CLOSED_PERMANENTLY' ? true : undefined,
+    // the legacy icon was a PNG URL; Google says to append an image suffix to the mask base
+    icon: p.iconMaskBaseUri && `${p.iconMaskBaseUri}.png`,
     icon_mask_base_uri: p.iconMaskBaseUri,
     icon_background_color: p.iconBackgroundColor,
     plus_code: p.plusCode && strip({ global_code: p.plusCode.globalCode, compound_code: p.plusCode.compoundCode }),
@@ -323,6 +345,8 @@ export const toLegacyPlace = (p: Place): LegacyPlace => {
       }),
     ),
     editorial_summary: p.editorialSummary && strip({ overview: p.editorialSummary.text, language: p.editorialSummary.languageCode }),
+    secondary_opening_hours: toSecondaryHours(p.regularSecondaryOpeningHours ?? p.currentSecondaryOpeningHours),
+    wheelchair_accessible_entrance: p.accessibilityOptions?.wheelchairAccessibleEntrance,
   })
   for (const [k, v] of Object.entries(p)) if (!mapped.has(k) && v !== undefined) place[snake(k)] = v
   return place
@@ -331,7 +355,8 @@ export const toLegacyPlace = (p: Place): LegacyPlace => {
 // ---------- text, nearby and find-place search ----------
 
 export interface TextSearchParams {
-  query: string
+  /** Required, except when pagetoken continues a search this client made */
+  query?: string
   region?: string
   location?: LegacyLatLng
   radius?: number
@@ -347,7 +372,7 @@ export interface TextSearchParams {
 
 export const textSearchRequest = (p: TextSearchParams): SearchTextRequest =>
   strip({
-    textQuery: p.query,
+    textQuery: p.query ?? '',
     regionCode: p.region,
     languageCode: p.language,
     locationBias: p.location ? { circle: { center: toLatLng(p.location), radius: p.radius ?? 0 } } : undefined,
