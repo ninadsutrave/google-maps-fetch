@@ -13,6 +13,8 @@ permissions:
 
 jobs:
   release:
+    # only in this repository, not in forks
+    if: github.repository == 'ninadsutrave/google-maps-fetch'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
