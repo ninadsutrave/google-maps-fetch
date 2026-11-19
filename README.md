@@ -252,6 +252,10 @@ Requests take the same `params` and return `{ data, status, statusText, headers,
 
 See [CONTRIBUTING.md](CONTRIBUTING.md). The tests use a fake `fetch`, so they don't need a Google key.
 
+## Maintainer
+
+Maintained by [Ninad Sutrave](https://ninadsutrave.com).
+
 ## License
 
 [MIT](LICENSE)
