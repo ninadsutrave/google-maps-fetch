@@ -4,7 +4,7 @@
 [![ci](https://github.com/ninadsutrave/mapsfetch/actions/workflows/ci.yml/badge.svg)](https://github.com/ninadsutrave/mapsfetch/actions/workflows/ci.yml)
 [![license](https://img.shields.io/npm/l/mapsfetch)](LICENSE)
 
-A small client for Google Maps Platform's current APIs (Places API (New), Routes API and Geocoding) built on `fetch`. It has no dependencies and runs on Node, Bun, Deno, Cloudflare Workers and Vercel Edge.
+A small client for Google Maps Platform's web APIs, built on `fetch`: Places API (New), Routes, Geocoding, Address Validation, Elevation, Time Zone, Geolocation and Roads, plus a `request()` for any other Maps REST API. It has no dependencies and runs on Node, Bun, Deno, Cloudflare Workers and Vercel Edge.
 
 It also ships `mapsfetch/compat`, a replacement for `@googlemaps/google-maps-services-js` with the same methods and response shapes. Existing code can move to the new APIs by changing one import.
 
@@ -20,7 +20,7 @@ const { routes } = await maps.routes.compute({ origin: 'Pune', destination: 'Mum
 ## Why
 
 - **The legacy APIs are closed to new projects.** Since October 2026, Places API (Legacy), Directions API (Legacy) and Distance Matrix API (Legacy) can no longer be enabled on new Google Cloud projects. `@googlemaps/google-maps-services-js` calls those APIs, so it doesn't work for a new project.
-- **Google's replacements are heavy.** The official clients for the new APIs (`@googlemaps/places`, `@googlemaps/routing`) are built on gRPC. Installing those two adds 37 MB to `node_modules`. mapsfetch is about 3.5 kB gzipped, and the compat layer about 12 kB.
+- **Google's replacements are heavy.** The official clients for the new APIs (`@googlemaps/places`, `@googlemaps/routing`) are built on gRPC. Installing those two adds 37 MB to `node_modules`. mapsfetch is about 4.3 kB gzipped, and the compat layer about 12 kB.
 - **It runs where your code runs.** It only needs `fetch`, `AbortController` and `crypto.randomUUID`. CI checks Node 20, 22 and 24. Before release, the same build was run in Bun, Deno, Cloudflare's `workerd` and Vercel's Edge Runtime.
 
 ## Install
@@ -88,6 +88,70 @@ Pass `languageCode` when you show `localizedValues` text. Without it, the Routes
 const [result] = await maps.geocode({ address: 'FC Road, Pune', components: { country: 'IN' } })
 const nearby = await maps.reverseGeocode({ location: { lat: 18.52, lng: 73.84 } })
 ```
+
+### Address Validation
+
+```ts
+const { result, responseId } = await maps.addressValidation.validate({
+  address: { regionCode: 'IN', addressLines: ['Shaniwar Wada, Shaniwar Peth', 'Pune 411030'] },
+})
+result.verdict.possibleNextAction // "ACCEPT", "CONFIRM", "FIX", ...
+result.address.formattedAddress
+result.geocode?.location
+
+// optional: tell Google which version you used
+await maps.addressValidation.feedback({ responseId, conclusion: 'VALIDATED_VERSION_USED' })
+```
+
+### Elevation, Time Zone, Geolocation and Roads
+
+```ts
+await maps.elevation({ locations: [[18.52, 73.85]] }) // [{ elevation: 560, location, resolution }]
+await maps.elevation({ path: [pune, mumbai], samples: 20 })
+
+await maps.timezone({ location: [18.52, 73.85] }) // { timeZoneId: 'Asia/Calcutta', rawOffset: 19800, ... }
+
+await maps.geolocate({ considerIp: false, wifiAccessPoints }) // { location: { lat, lng }, accuracy }
+
+await maps.roads.snap({ path: gpsTrace, interpolate: true }) // [{ location, originalIndex, placeId }]
+await maps.roads.nearest({ points: [[18.52, 73.85]] })
+```
+
+### Any other Maps API
+
+`request()` sends any Google Maps Platform REST call with the same key handling, field masks, retries, timeouts and errors:
+
+```ts
+const forecast = await maps.request<{ dailyInfo: unknown[] }>({
+  method: 'POST',
+  url: 'https://pollen.googleapis.com/v1/forecast:lookup',
+  body: { location: { latitude: 18.52, longitude: 73.85 }, days: 3 },
+})
+
+// older JSON APIs take the key in the query string
+await maps.request({
+  method: 'GET',
+  url: 'https://maps.googleapis.com/maps/api/streetview/metadata',
+  query: { location: '18.52,73.85' },
+  keyIn: 'query',
+})
+```
+
+### What's covered
+
+| API                                                                          | Methods                                                                        |
+| :--------------------------------------------------------------------------- | :----------------------------------------------------------------------------- |
+| Places API (New)                                                             | `places.autocomplete`, `get`, `searchText`, `searchNearby`, `photo`, `session` |
+| Routes API                                                                   | `routes.compute`, `routes.matrix`                                              |
+| Geocoding API                                                                | `geocode`, `reverseGeocode`                                                    |
+| Address Validation API                                                       | `addressValidation.validate`, `feedback`                                       |
+| Elevation API                                                                | `elevation`                                                                    |
+| Time Zone API                                                                | `timezone`                                                                     |
+| Geolocation API                                                              | `geolocate`                                                                    |
+| Roads API                                                                    | `roads.snap`, `roads.nearest`                                                  |
+| Anything else (Route Optimization, Solar, Air Quality, Pollen, Weather, ...) | `request`                                                                      |
+
+Typed methods are added when people ask for them; open an issue if you'd like one.
 
 ## Field masks and billing
 

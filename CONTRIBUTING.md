@@ -28,7 +28,7 @@ npm install
 
 The tests run against a fake `fetch` (`test/helpers.ts`) that records each request, so you don't need an API key. Test the request mapping and the response mapping separately, and when you can, base response fixtures on real responses from Google.
 
-There is also a small live suite in `test/live` that calls Google's real APIs, about 25 requests per run. It needs a key with Places API (New), Routes API and Geocoding API enabled:
+There is also a small live suite in `test/live` that calls Google's real APIs, about 40 requests per run. It needs a key with Places API (New), Routes, Geocoding, Address Validation, Elevation, Time Zone, Geolocation and Roads enabled. You can run one file on its own, such as `npx vitest run --config vitest.live.config.ts test/live/services.test.ts`.
 
 ```sh
 echo "GOOGLE_MAPS_KEY=your-key" > .env.local   # git-ignored

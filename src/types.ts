@@ -388,3 +388,159 @@ export interface ReverseGeocodeRequest {
   locationType?: string[]
   language?: string
 }
+
+// ---------- Elevation API ----------
+
+export type ElevationRequest =
+  /** Up to 512 points */
+  | { locations: LatLngInput[] }
+  /** Evenly spaced samples along a path */
+  | { path: LatLngInput[]; samples: number }
+
+export interface ElevationResult {
+  /** Metres above sea level */
+  elevation: number
+  location: { lat: number; lng: number }
+  /** Metres between the data points the value was interpolated from */
+  resolution?: number
+}
+
+// ---------- Time Zone API ----------
+
+export interface TimeZoneRequest {
+  location: LatLngInput
+  /** When to resolve daylight saving for: a Date, or seconds since the epoch. Default now. */
+  timestamp?: Date | number
+  language?: string
+}
+
+export interface TimeZone {
+  /** Seconds of daylight saving offset at the timestamp */
+  dstOffset: number
+  /** Seconds from UTC, without daylight saving */
+  rawOffset: number
+  /** IANA ID, e.g. "Asia/Kolkata" */
+  timeZoneId: string
+  timeZoneName: string
+}
+
+// ---------- Geolocation API ----------
+
+export interface GeolocateRequest {
+  homeMobileCountryCode?: number
+  homeMobileNetworkCode?: number
+  /** gsm, cdma, wcdma, lte or nr */
+  radioType?: string
+  carrier?: string
+  /** Fall back to the caller's IP address. Default true; from a server that's the server's IP. */
+  considerIp?: boolean
+  cellTowers?: {
+    cellId: number
+    locationAreaCode?: number
+    mobileCountryCode?: number
+    mobileNetworkCode?: number
+    [field: string]: unknown
+  }[]
+  wifiAccessPoints?: { macAddress: string; signalStrength?: number; channel?: number; [field: string]: unknown }[]
+}
+
+export interface GeolocateResponse {
+  location: { lat: number; lng: number }
+  /** Metres, at 68% confidence */
+  accuracy: number
+}
+
+// ---------- Roads API ----------
+
+export interface SnappedPoint {
+  location: LatLng
+  /** Index of the input point this was snapped from; missing for interpolated points */
+  originalIndex?: number
+  placeId: string
+}
+
+export interface SnapToRoadsRequest {
+  /** Up to 100 points, in order of travel */
+  path: LatLngInput[]
+  /** Add points along the road between the snapped ones */
+  interpolate?: boolean
+}
+
+export interface NearestRoadsRequest {
+  /** Up to 100 independent points */
+  points: LatLngInput[]
+}
+
+// ---------- Address Validation API ----------
+
+export interface PostalAddress {
+  regionCode?: string
+  languageCode?: string
+  postalCode?: string
+  administrativeArea?: string
+  locality?: string
+  sublocality?: string
+  addressLines?: string[]
+  recipients?: string[]
+  organization?: string
+  [field: string]: unknown
+}
+
+export interface ValidateAddressRequest {
+  address: PostalAddress
+  /** responseId of the previous call when re-validating the same address */
+  previousResponseId?: string
+  /** USPS CASS processing, US and PR only */
+  enableUspsCass?: boolean
+  sessionToken?: string
+  [field: string]: unknown
+}
+
+export interface AddressComponentValidation {
+  componentName: LocalizedText
+  componentType: string
+  /** CONFIRMED, UNCONFIRMED_BUT_PLAUSIBLE or UNCONFIRMED_AND_SUSPICIOUS */
+  confirmationLevel?: string
+  inferred?: boolean
+  spellCorrected?: boolean
+  replaced?: boolean
+  unexpected?: boolean
+}
+
+export interface ValidateAddressResponse {
+  result: {
+    verdict: {
+      inputGranularity?: string
+      validationGranularity?: string
+      geocodeGranularity?: string
+      addressComplete?: boolean
+      hasUnconfirmedComponents?: boolean
+      hasInferredComponents?: boolean
+      hasReplacedComponents?: boolean
+      /** FIX, CONFIRM_ADD_SUBPREMISES, CONFIRM or ACCEPT */
+      possibleNextAction?: string
+      [field: string]: unknown
+    }
+    address: {
+      formattedAddress?: string
+      postalAddress?: PostalAddress
+      addressComponents?: AddressComponentValidation[]
+      missingComponentTypes?: string[]
+      unconfirmedComponentTypes?: string[]
+      unresolvedTokens?: string[]
+    }
+    geocode?: {
+      location?: LatLng
+      placeId?: string
+      placeTypes?: string[]
+      featureSizeMeters?: number
+      [field: string]: unknown
+    }
+    metadata?: { business?: boolean; poBox?: boolean; residential?: boolean }
+    [field: string]: unknown
+  }
+  responseId: string
+}
+
+/** How the address was used in the end, for Google's feedback endpoint */
+export type ValidationConclusion = 'VALIDATED_VERSION_USED' | 'USER_VERSION_USED' | 'UNVALIDATED_VERSION_USED' | 'UNUSED'
