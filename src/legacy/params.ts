@@ -24,7 +24,7 @@ export const parseLatLng = (value: string): LatLng | undefined => {
 export const toLatLng = (value: LegacyLatLng): LatLng => {
   if (typeof value === 'string') {
     const parsed = parseLatLng(value)
-    if (!parsed) throw new Error(`mapsfetch/compat: expected "lat,lng" but got "${value}"`)
+    if (!parsed) throw new Error(`google-maps-fetch/compat: expected "lat,lng" but got "${value}"`)
     return parsed
   }
   if (Array.isArray(value)) return { latitude: value[0], longitude: value[1] }
@@ -45,7 +45,7 @@ export const toWaypoint = (value: LegacyLatLng): Waypoint => {
   if (typeof value !== 'string') return { location: { latLng: toLatLng(value) } }
   const via = value.startsWith('via:')
   const v = via ? value.slice(4) : value
-  if (v.startsWith('enc:')) throw new Error('mapsfetch/compat: encoded-polyline waypoints ("enc:...") are not supported')
+  if (v.startsWith('enc:')) throw new Error('google-maps-fetch/compat: encoded-polyline waypoints ("enc:...") are not supported')
   const coords = parseLatLng(v)
   const point: Waypoint = v.startsWith('place_id:') ? { placeId: v.slice(9) } : coords ? { location: { latLng: coords } } : { address: v }
   return via ? { ...point, via: true } : point
@@ -85,7 +85,7 @@ export const parseLocationBias = (value: string | undefined): Area | undefined =
     const [low, high] = rest.split('|')
     return { rectangle: { low: toLatLng(low), high: toLatLng(high) } }
   }
-  throw new Error(`mapsfetch/compat: unrecognised locationbias "${value}"`)
+  throw new Error(`google-maps-fetch/compat: unrecognised locationbias "${value}"`)
 }
 
 const isLatLngObject = (v: object) => ('lat' in v && 'lng' in v) || ('latitude' in v && 'longitude' in v)

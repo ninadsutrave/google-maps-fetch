@@ -11,7 +11,7 @@ const key = ((globalThis as { process?: { env: Record<string, string | undefined
 const wada = { latitude: 18.5195, longitude: 73.8553 }
 const near = (a: number, b: number, tolerance = 0.05) => Math.abs(a - b) < tolerance
 
-describe.skipIf(!key)('live: mapsfetch', () => {
+describe.skipIf(!key)('live: google-maps-fetch', () => {
   const maps = createClient({ key: key! })
 
   it('autocomplete then details in one session, with only the default fields back', async () => {
@@ -93,7 +93,7 @@ describe.skipIf(!key)('live: mapsfetch', () => {
   })
 })
 
-describe.skipIf(!key)('live: mapsfetch/compat', () => {
+describe.skipIf(!key)('live: google-maps-fetch/compat', () => {
   const client = new Client()
 
   it('placeAutocomplete and placeDetails, sharing a session token', async () => {

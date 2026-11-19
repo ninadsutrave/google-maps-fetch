@@ -6,7 +6,7 @@ Security fixes go into the latest release.
 
 ## Reporting a vulnerability
 
-Please don't open a public issue. Use [private vulnerability reporting](https://github.com/ninadsutrave/mapsfetch/security/advisories/new) on GitHub, or email ninadsutrave@gmail.com.
+Please don't open a public issue. Use [private vulnerability reporting](https://github.com/ninadsutrave/google-maps-fetch/security/advisories/new) on GitHub, or email ninadsutrave@gmail.com.
 
 You'll get a reply within a few days. Once a fix is released, the advisory is published with credit to you unless you'd rather stay anonymous.
 

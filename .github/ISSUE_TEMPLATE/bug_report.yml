@@ -24,7 +24,7 @@ body:
     id: versions
     attributes:
       label: Versions
-      placeholder: mapsfetch 0.1.0, Node 22 (or Bun, Deno, Cloudflare Workers, ...)
+      placeholder: google-maps-fetch 0.1.0, Node 22 (or Bun, Deno, Cloudflare Workers, ...)
     validations:
       required: true
   - type: dropdown
@@ -32,5 +32,5 @@ body:
     attributes:
       label: Which import
       options:
-        - mapsfetch
-        - mapsfetch/compat
+        - google-maps-fetch
+        - google-maps-fetch/compat

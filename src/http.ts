@@ -105,8 +105,8 @@ const wait = (ms: number, signal?: AbortSignal) =>
 const backoff = (attempt: number) => 250 * 2 ** attempt + Math.random() * 100
 
 export function createTransport({ key, fetch: f = globalThis.fetch, timeout = 10_000, retries = 2, headers = {} }: ClientOptions): Send {
-  if (!key) throw new Error('mapsfetch: an API key is required')
-  if (typeof f !== 'function') throw new Error('mapsfetch: no fetch available; pass one with the fetch option')
+  if (!key) throw new Error('google-maps-fetch: an API key is required')
+  if (typeof f !== 'function') throw new Error('google-maps-fetch: no fetch available; pass one with the fetch option')
 
   return async function send<T>(request: Request, call: CallOptions = {}): Promise<T> {
     const { method, body, fields, keyIn = 'header' } = request
@@ -147,8 +147,8 @@ export function createTransport({ key, fetch: f = globalThis.fetch, timeout = 10
         // the caller cancelled: don't retry, rethrow their reason
         if (call.signal?.aborted) throw call.signal.reason
         error = timedOut
-          ? new MapsError(`mapsfetch: no response within ${ms}ms`, 0, 'TIMEOUT')
-          : new MapsError(`mapsfetch: ${(e as Error)?.message ?? 'network error'}`, 0, 'NETWORK_ERROR', e)
+          ? new MapsError(`google-maps-fetch: no response within ${ms}ms`, 0, 'TIMEOUT')
+          : new MapsError(`google-maps-fetch: ${(e as Error)?.message ?? 'network error'}`, 0, 'NETWORK_ERROR', e)
       } finally {
         clearTimeout(timer)
         call.signal?.removeEventListener('abort', onAbort)

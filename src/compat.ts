@@ -1,5 +1,5 @@
 // Same API as @googlemaps/google-maps-services-js 3.x, running on Places API (New) and the Routes API.
-// Switch by changing the import to "mapsfetch/compat".
+// Switch by changing the import to "google-maps-fetch/compat".
 import { createTransport, MapsError, type CallOptions, type FetchLike, type Send } from './http'
 import { parseLocationBias, serializeParams, type LegacyLatLng } from './legacy/params'
 import {
@@ -177,7 +177,7 @@ export class Client {
   }
 
   private transport(key: string | undefined): Send {
-    if (!key) throw new Error('mapsfetch/compat: params.key is required (client ID and URL signing are not supported)')
+    if (!key) throw new Error('google-maps-fetch/compat: params.key is required (client ID and URL signing are not supported)')
     const id = this.experienceId.join(',')
     const cacheKey = `${key}\n${id}`
     let send = this.transports.get(cacheKey)
@@ -322,14 +322,14 @@ export class Client {
     const { photoreference, maxwidth, maxheight, key } = request.params
     if (!photoreference.startsWith('places/')) {
       throw new Error(
-        'mapsfetch/compat: photoreference must be a Places API (New) photo name ("places/.../photos/..."), as returned in photos[]',
+        'google-maps-fetch/compat: photoreference must be a Places API (New) photo name ("places/.../photos/..."), as returned in photos[]',
       )
     }
     const send = this.transport(key)
     const call = { timeout: request.timeout, signal: request.signal }
     const { photoUri } = await createPlaces(send).photo(photoreference, { ...call, maxWidthPx: maxwidth, maxHeightPx: maxheight })
     const res = await (this.options.fetch ?? globalThis.fetch)(photoUri, { signal: request.signal })
-    if (!res.ok) throw new MapsError(`mapsfetch/compat: photo download failed with HTTP ${res.status}`, res.status, 'UNKNOWN')
+    if (!res.ok) throw new MapsError(`google-maps-fetch/compat: photo download failed with HTTP ${res.status}`, res.status, 'UNKNOWN')
     const contentType = res.headers.get('content-type')
     return { ...respond(await res.arrayBuffer()), headers: contentType ? { 'content-type': contentType } : {} }
   }

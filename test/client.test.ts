@@ -249,7 +249,11 @@ describe('errors, retries and timeouts', () => {
   it('reports a network error once retries run out', async () => {
     const { fetch } = mockFetch(() => new TypeError('fetch failed'))
     const maps = createClient({ key: KEY, fetch, retries: 0 })
-    await expect(maps.places.get('x')).rejects.toMatchObject({ status: 0, code: 'NETWORK_ERROR', message: 'mapsfetch: fetch failed' })
+    await expect(maps.places.get('x')).rejects.toMatchObject({
+      status: 0,
+      code: 'NETWORK_ERROR',
+      message: 'google-maps-fetch: fetch failed',
+    })
   })
 
   it('times out a request that never answers', async () => {

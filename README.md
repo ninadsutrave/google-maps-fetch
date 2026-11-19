@@ -1,15 +1,17 @@
-# mapsfetch
+# google-maps-fetch
 
-[![npm](https://img.shields.io/npm/v/mapsfetch)](https://www.npmjs.com/package/mapsfetch)
-[![ci](https://github.com/ninadsutrave/mapsfetch/actions/workflows/ci.yml/badge.svg)](https://github.com/ninadsutrave/mapsfetch/actions/workflows/ci.yml)
-[![license](https://img.shields.io/npm/l/mapsfetch)](LICENSE)
+[![npm](https://img.shields.io/npm/v/google-maps-fetch)](https://www.npmjs.com/package/google-maps-fetch)
+[![ci](https://github.com/ninadsutrave/google-maps-fetch/actions/workflows/ci.yml/badge.svg)](https://github.com/ninadsutrave/google-maps-fetch/actions/workflows/ci.yml)
+[![license](https://img.shields.io/npm/l/google-maps-fetch)](LICENSE)
 
 A small client for Google Maps Platform's web APIs, built on `fetch`: Places API (New), Routes, Geocoding, Address Validation, Elevation, Time Zone, Geolocation and Roads, plus a `request()` for any other Maps REST API. It has no dependencies and runs on Node, Bun, Deno, Cloudflare Workers and Vercel Edge.
 
-It also ships `mapsfetch/compat`, a replacement for `@googlemaps/google-maps-services-js` with the same methods and response shapes. Existing code can move to the new APIs by changing one import.
+It also ships `google-maps-fetch/compat`, a replacement for `@googlemaps/google-maps-services-js` with the same methods and response shapes. Existing code can move to the new APIs by changing one import.
+
+Building a search box in React? [google-places-autocomplete-hook](https://github.com/ninadsutrave/google-places-autocomplete-hook) is the browser-side companion: a hook for Places autocomplete on the same new API.
 
 ```ts
-import { createClient } from 'mapsfetch'
+import { createClient } from 'google-maps-fetch'
 
 const maps = createClient({ key: process.env.GOOGLE_MAPS_KEY! })
 
@@ -20,13 +22,13 @@ const { routes } = await maps.routes.compute({ origin: 'Pune', destination: 'Mum
 ## Why
 
 - **The legacy APIs are closed to new projects.** Since October 2026, Places API (Legacy), Directions API (Legacy) and Distance Matrix API (Legacy) can no longer be enabled on new Google Cloud projects. `@googlemaps/google-maps-services-js` calls those APIs, so it doesn't work for a new project.
-- **Google's replacements are heavy.** The official clients for the new APIs (`@googlemaps/places`, `@googlemaps/routing`) are built on gRPC. Installing those two adds 37 MB to `node_modules`. mapsfetch is about 4.3 kB gzipped, and the compat layer about 12 kB.
+- **Google's replacements are heavy.** The official clients for the new APIs (`@googlemaps/places`, `@googlemaps/routing`) are built on gRPC. Installing those two adds 37 MB to `node_modules`. `google-maps-fetch` is about 4.3 kB gzipped, and the compat layer about 12 kB.
 - **It runs where your code runs.** It only needs `fetch`, `AbortController` and `crypto.randomUUID`. CI checks Node 20, 22 and 24. Before release, the same build was run in Bun, Deno, Cloudflare's `workerd` and Vercel's Edge Runtime.
 
 ## Install
 
 ```sh
-npm install mapsfetch
+npm install google-maps-fetch
 ```
 
 Enable the APIs you use on your Google Cloud project (**Places API (New)**, **Routes API**, **Geocoding API**). If your key has API restrictions, add them there too.
@@ -155,7 +157,7 @@ Typed methods are added when people ask for them; open an issue if you'd like on
 
 ## Field masks and billing
 
-Google bills Place Details and searches by the most expensive field you ask for, and the Places and Routes APIs need a field mask for most calls. mapsfetch defaults to the cheapest useful mask. Pass `fields` to change it.
+Google bills Place Details and searches by the most expensive field you ask for, and the Places and Routes APIs need a field mask for most calls. `google-maps-fetch` defaults to the cheapest useful mask. Pass `fields` to change it.
 
 | Call                  | Default fields                                                   | Billing tier                                                                                 |
 | :-------------------- | :--------------------------------------------------------------- | :------------------------------------------------------------------------------------------- |
@@ -187,7 +189,7 @@ Every method also takes `{ signal, timeout }`, and the field-masked ones take `f
 Failures throw a `MapsError`:
 
 ```ts
-import { MapsError } from 'mapsfetch'
+import { MapsError } from 'google-maps-fetch'
 
 try {
   await maps.places.get('not-a-place')
@@ -206,7 +208,7 @@ Change the import:
 
 ```diff
 - import { Client, TravelMode } from '@googlemaps/google-maps-services-js'
-+ import { Client, TravelMode } from 'mapsfetch/compat'
++ import { Client, TravelMode } from 'google-maps-fetch/compat'
 
   const client = new Client({})
   const { data } = await client.directions({
@@ -245,3 +247,5 @@ See [CONTRIBUTING.md](CONTRIBUTING.md). The tests use a fake `fetch`, so they do
 ## License
 
 [MIT](LICENSE)
+
+This is an independent project, not affiliated with or endorsed by Google. Google Maps is a trademark of Google LLC.

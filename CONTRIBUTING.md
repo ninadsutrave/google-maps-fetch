@@ -13,8 +13,8 @@ Thanks for helping out. Bug reports, fixes, docs and ideas are all welcome.
 You need Node 20 or later.
 
 ```sh
-git clone https://github.com/ninadsutrave/mapsfetch.git
-cd mapsfetch
+git clone https://github.com/ninadsutrave/google-maps-fetch.git
+cd google-maps-fetch
 npm install
 ```
 
