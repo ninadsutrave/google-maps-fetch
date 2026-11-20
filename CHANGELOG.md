@@ -1,5 +1,11 @@
 # google-maps-fetch
 
+## 0.1.2
+
+### Patch Changes
+
+- 0193c3d: README: attribute the October 2026 legacy API change to Google's notice.
+
 ## 0.1.1
 
 ### Patch Changes
