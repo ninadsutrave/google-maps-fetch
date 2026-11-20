@@ -4,7 +4,7 @@
 [![ci](https://github.com/ninadsutrave/google-maps-fetch/actions/workflows/ci.yml/badge.svg)](https://github.com/ninadsutrave/google-maps-fetch/actions/workflows/ci.yml)
 [![license](https://img.shields.io/npm/l/google-maps-fetch)](LICENSE)
 
-A small client for Google Maps Platform's web APIs, built on `fetch`: Places API (New), Routes, Geocoding, Address Validation, Elevation, Time Zone, Geolocation and Roads, plus a `request()` for any other Maps REST API. It has no dependencies and runs on Node, Bun, Deno, Cloudflare Workers and Vercel Edge.
+A small client for Google Maps Platform's web APIs, built on `fetch`: Places API (New), Routes, Geocoding, Address Validation, Elevation, Time Zone, Geolocation and Roads, plus a `request()` for any other Maps REST API. It has no dependencies and runs on Node, Bun, Deno, Cloudflare Workers and Vercel Edge. [Try it in the browser with your own key](https://ninadsutrave.github.io/google-maps-fetch/).
 
 It also ships `google-maps-fetch/compat`, a replacement for `@googlemaps/google-maps-services-js` with the same methods and response shapes. Existing code can move to the new APIs by changing one import.
 
@@ -267,12 +267,8 @@ Requests take the same `params` and return `{ data, status, statusText, headers,
 
 See [CONTRIBUTING.md](CONTRIBUTING.md). The tests use a fake `fetch`, so they don't need a Google key.
 
-## Maintainer
-
-Maintained by [Ninad Sutrave](https://ninadsutrave.com).
-
 ## License
 
-[MIT](LICENSE)
+[MIT](LICENSE) © [Ninad Sutrave](https://ninadsutrave.com)
 
 This is an independent project, not affiliated with or endorsed by Google. Google Maps is a trademark of Google LLC.
