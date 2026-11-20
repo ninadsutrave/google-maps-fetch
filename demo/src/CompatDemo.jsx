@@ -2,7 +2,7 @@ import { useState } from 'react'
 
 // The legacy @googlemaps/google-maps-services-js calls, answered by the new APIs through google-maps-fetch/compat.
 export function CompatDemo({ client, apiKey }) {
-  const [input, setInput] = useState('Shaniwar Wada')
+  const [input, setInput] = useState('Eiffel Tower')
   const [predictions, setPredictions] = useState([])
   const [details, setDetails] = useState(null)
   const [error, setError] = useState(null)

@@ -15,8 +15,8 @@ import { createClient } from 'google-maps-fetch'
 
 const maps = createClient({ key: process.env.GOOGLE_MAPS_KEY! })
 
-const { suggestions } = await maps.places.autocomplete({ input: 'Shaniwar Wada', includedRegionCodes: ['in'] })
-const { routes } = await maps.routes.compute({ origin: 'Pune', destination: 'Mumbai' })
+const { suggestions } = await maps.places.autocomplete({ input: 'Eiffel Tower', includedRegionCodes: ['fr'] })
+const { routes } = await maps.routes.compute({ origin: 'Paris', destination: 'Amsterdam' })
 ```
 
 ## Why
@@ -59,14 +59,14 @@ const { suggestions = [] } = await session.autocomplete({ input: 'Vaishali FC Ro
 const place = await session.get(suggestions[0].placePrediction!.placeId) // ends the session
 
 place.formattedAddress // "1218/1, FC Road, ..."
-place.location // { latitude: 18.52, longitude: 73.84 }
+place.location // { latitude: 48.86, longitude: 2.29 }
 
 // more fields cost more; ask for what you need
 await maps.places.get(placeId, { fields: ['displayName', 'rating', 'regularOpeningHours'] })
 
-await maps.places.searchText({ textQuery: 'misal in Pune', pageSize: 10 })
+await maps.places.searchText({ textQuery: 'croissants in Paris', pageSize: 10 })
 await maps.places.searchNearby({
-  locationRestriction: { circle: { center: { latitude: 18.52, longitude: 73.85 }, radius: 800 } },
+  locationRestriction: { circle: { center: { latitude: 48.8584, longitude: 2.2945 }, radius: 800 } },
   includedTypes: ['cafe'],
 })
 
@@ -80,37 +80,37 @@ Waypoints can be an address string, coordinates (`{ lat, lng }`, `{ latitude, lo
 
 ```ts
 const { routes = [] } = await maps.routes.compute({
-  origin: 'Pune Railway Station',
-  destination: { lat: 19.076, lng: 72.8777 },
+  origin: 'Eiffel Tower, Paris',
+  destination: { lat: 50.8467, lng: 4.3525 }, // Grand-Place, Brussels
   travelMode: 'DRIVE',
   languageCode: 'en',
 })
-routes[0].distanceMeters // e.g. 151000
-seconds(routes[0].duration) // e.g. 10800
-routes[0].localizedValues?.distance?.text // "151 km"
+routes[0].distanceMeters // metres
+seconds(routes[0].duration) // travel time in seconds
+routes[0].localizedValues?.distance?.text // e.g. "300 km"
 
 // every origin to every destination; match results by index
 const elements = await maps.routes.matrix({
-  origins: ['Pune', 'Nashik'],
-  destinations: ['Mumbai', [18.5204, 73.8567]],
+  origins: ['Paris', 'Brussels'],
+  destinations: ['Amsterdam', [51.9225, 4.4792]],
 })
 for (const e of elements) console.log(e.originIndex, e.destinationIndex, e.distanceMeters)
 ```
 
-Pass `languageCode` when you show `localizedValues` text. Without it, the Routes API picks a language from the origin: for a route from Pune it answered in Assamese script ("১৫১ কিল’মিটাৰ").
+Pass `languageCode` when you show `localizedValues` text. Without it, the Routes API picks a language from the origin: in one of my test runs it answered in Assamese script ("১৫১ কিল’মিটাৰ").
 
 ### Geocoding
 
 ```ts
-const [result] = await maps.geocode({ address: 'FC Road, Pune', components: { country: 'IN' } })
-const nearby = await maps.reverseGeocode({ location: { lat: 18.52, lng: 73.84 } })
+const [result] = await maps.geocode({ address: 'Champs-Élysées, Paris', components: { country: 'FR' } })
+const nearby = await maps.reverseGeocode({ location: { lat: 48.8584, lng: 2.2945 } })
 ```
 
 ### Address Validation
 
 ```ts
 const { result, responseId } = await maps.addressValidation.validate({
-  address: { regionCode: 'IN', addressLines: ['Shaniwar Wada, Shaniwar Peth', 'Pune 411030'] },
+  address: { regionCode: 'US', addressLines: ['1600 Pennsylvania Avenue NW', 'Washington, DC 20500'] },
 })
 result.verdict.possibleNextAction // "ACCEPT", "CONFIRM", "FIX", ...
 result.address.formattedAddress
@@ -123,15 +123,15 @@ await maps.addressValidation.feedback({ responseId, conclusion: 'VALIDATED_VERSI
 ### Elevation, Time Zone, Geolocation and Roads
 
 ```ts
-await maps.elevation({ locations: [[18.52, 73.85]] }) // [{ elevation: 560, location, resolution }]
-await maps.elevation({ path: [pune, mumbai], samples: 20 })
+await maps.elevation({ locations: [[48.8584, 2.2945]] }) // [{ elevation, location, resolution }]
+await maps.elevation({ path: [paris, amsterdam], samples: 20 })
 
-await maps.timezone({ location: [18.52, 73.85] }) // { timeZoneId: 'Asia/Calcutta', rawOffset: 19800, ... }
+await maps.timezone({ location: [48.8584, 2.2945] }) // { timeZoneId: 'Europe/Paris', rawOffset: 3600, ... }
 
 await maps.geolocate({ considerIp: false, wifiAccessPoints }) // { location: { lat, lng }, accuracy }
 
 await maps.roads.snap({ path: gpsTrace, interpolate: true }) // [{ location, originalIndex, placeId }]
-await maps.roads.nearest({ points: [[18.52, 73.85]] })
+await maps.roads.nearest({ points: [[48.8584, 2.2945]] })
 ```
 
 ### Any other Maps API
@@ -142,14 +142,14 @@ await maps.roads.nearest({ points: [[18.52, 73.85]] })
 const forecast = await maps.request<{ dailyInfo: unknown[] }>({
   method: 'GET',
   url: 'https://pollen.googleapis.com/v1/forecast:lookup',
-  query: { 'location.latitude': 18.52, 'location.longitude': 73.85, days: 3 },
+  query: { 'location.latitude': 48.8584, 'location.longitude': 2.2945, days: 3 },
 })
 
 // older JSON APIs take the key in the query string
 await maps.request({
   method: 'GET',
   url: 'https://maps.googleapis.com/maps/api/streetview/metadata',
-  query: { location: '18.52,73.85' },
+  query: { location: '48.8584,2.2945' },
   keyIn: 'query',
 })
 ```
@@ -233,7 +233,7 @@ Change the import:
 
   const client = new Client({})
   const { data } = await client.directions({
-    params: { origin: 'Pune', destination: 'Mumbai', mode: TravelMode.driving, key },
+    params: { origin: 'Paris', destination: 'Amsterdam', mode: TravelMode.driving, key },
   })
 ```
 

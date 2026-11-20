@@ -16,10 +16,10 @@ const maps = createClient({ key: process.env.GOOGLE_MAPS_KEY })
 
 // autocomplete and details in one billed session
 const session = maps.places.session()
-const { suggestions = [] } = await session.autocomplete({ input: 'Shaniwar Wada' })
+const { suggestions = [] } = await session.autocomplete({ input: 'Eiffel Tower' })
 const place = await session.get(suggestions[0].placePrediction.placeId)
 
-const { routes = [] } = await maps.routes.compute({ origin: 'Pune', destination: 'Mumbai' })`
+const { routes = [] } = await maps.routes.compute({ origin: 'Paris', destination: 'Amsterdam' })`
 
 const compatDiff = `- import { Client } from '@googlemaps/google-maps-services-js'
 + import { Client } from 'google-maps-fetch/compat'`

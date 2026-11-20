@@ -12,8 +12,8 @@ const duration = (s) => {
 
 // One route through the Routes API with maps.routes.compute().
 export function RoutesDemo({ maps }) {
-  const [origin, setOrigin] = useState('Pune Railway Station')
-  const [destination, setDestination] = useState('Gateway of India, Mumbai')
+  const [origin, setOrigin] = useState('Eiffel Tower, Paris')
+  const [destination, setDestination] = useState('Louvre Museum, Paris')
   const [travelMode, setTravelMode] = useState('DRIVE')
   const [route, setRoute] = useState(null)
   const [error, setError] = useState(null)
