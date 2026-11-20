@@ -1,5 +1,11 @@
 # google-maps-fetch
 
+## 0.1.6
+
+### Patch Changes
+
+- 4c14808: Add a demo page where you can try the client in the browser with your own key, and use it as the npm homepage. The README's license line now names the copyright holder.
+
 ## 0.1.5
 
 ### Patch Changes
