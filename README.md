@@ -21,7 +21,7 @@ const { routes } = await maps.routes.compute({ origin: 'Pune', destination: 'Mum
 
 ## Why
 
-- **The legacy APIs are closing to new projects.** Places API (Legacy), Directions API (Legacy) and Distance Matrix API (Legacy) are hidden from new projects and left out of new API keys, and Google says that since October 2026 they can no longer be enabled for new Google Cloud projects. `@googlemaps/google-maps-services-js` calls those APIs.
+- **The legacy APIs are closing to new projects.** Places API (Legacy), Directions API (Legacy) and Distance Matrix API (Legacy) are hidden from new projects and left out of new API keys, and Google says that since October 2026 they can no longer be enabled for new Google Cloud projects. `@googlemaps/google-maps-services-js` calls those APIs, so on a project without them it gets `REQUEST_DENIED` with "You're calling a legacy API, which is not enabled for your project".
 - **Google's replacements are heavy.** The official clients for the new APIs (`@googlemaps/places`, `@googlemaps/routing`) are built on gRPC. Installing those two adds 37 MB to `node_modules`. `google-maps-fetch` is about 4.4 kB gzipped, and the compat layer about 12 kB.
 - **It runs where your code runs.** It only needs `fetch`, `AbortController` and `crypto.randomUUID`. It's tested on Node 20, 22, 24 and 26. Before release, the same build was run in Bun, Deno, Cloudflare's `workerd` and Vercel's Edge Runtime.
 
@@ -125,9 +125,9 @@ await maps.roads.nearest({ points: [[18.52, 73.85]] })
 
 ```ts
 const forecast = await maps.request<{ dailyInfo: unknown[] }>({
-  method: 'POST',
+  method: 'GET',
   url: 'https://pollen.googleapis.com/v1/forecast:lookup',
-  body: { location: { latitude: 18.52, longitude: 73.85 }, days: 3 },
+  query: { 'location.latitude': 18.52, 'location.longitude': 73.85, days: 3 },
 })
 
 // older JSON APIs take the key in the query string

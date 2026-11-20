@@ -154,18 +154,18 @@ describe('addressValidation', () => {
 
 describe('request', () => {
   it('reaches any endpoint, with the key in a header by default and a field mask', async () => {
-    const { fetch, calls } = mockFetch(() => ({ body: { dailyInfo: [] } }))
+    const { fetch, calls } = mockFetch(() => ({ body: { indexes: [] } }))
     const maps = createClient({ key: KEY, fetch })
-    const res = await maps.request<{ dailyInfo: unknown[] }>({
+    const res = await maps.request<{ indexes: unknown[] }>({
       method: 'POST',
-      url: 'https://pollen.googleapis.com/v1/forecast:lookup',
-      body: { location: { latitude: 18.52, longitude: 73.85 }, days: 1 },
-      fields: ['dailyInfo.date'],
+      url: 'https://airquality.googleapis.com/v1/currentConditions:lookup',
+      body: { location: { latitude: 18.52, longitude: 73.85 } },
+      fields: ['indexes'],
     })
-    expect(res).toEqual({ dailyInfo: [] })
+    expect(res).toEqual({ indexes: [] })
     expect(calls[0].headers).toMatchObject({
       'X-Goog-Api-Key': KEY,
-      'X-Goog-FieldMask': 'dailyInfo.date',
+      'X-Goog-FieldMask': 'indexes',
       'Content-Type': 'application/json',
     })
   })
