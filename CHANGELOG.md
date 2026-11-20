@@ -1,5 +1,11 @@
 # google-maps-fetch
 
+## 0.1.3
+
+### Patch Changes
+
+- 833c007: README: name the legacy API error people search for, and fix the Pollen `request()` example, which is a GET with query parameters.
+
 ## 0.1.2
 
 ### Patch Changes
