@@ -8,7 +8,7 @@ A small client for Google Maps Platform's web APIs, built on `fetch`: Places API
 
 It also ships `google-maps-fetch/compat`, a replacement for `@googlemaps/google-maps-services-js` with the same methods and response shapes. Existing code can move to the new APIs by changing one import.
 
-Building a search box in React? [google-places-autocomplete-hook](https://github.com/ninadsutrave/google-places-autocomplete-hook) is the browser-side companion: a hook for Places autocomplete on the same new API.
+Building a search box in React? [google-places-autocomplete-hook](https://github.com/ninadsutrave/google-places-autocomplete-hook) is the browser-side companion: a hook for Places autocomplete on the same new API. [Try it with your own key](https://ninadsutrave.github.io/google-places-autocomplete-hook/).
 
 ```ts
 import { createClient } from 'google-maps-fetch'
