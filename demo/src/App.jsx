@@ -88,16 +88,11 @@ function KeyForm({ apiKey, onChange }) {
         )}
       </div>
       <p className="privacy">
-        <b>We never store or see your key.</b> It stays in this browser&apos;s local storage and goes only to Google, with each request.
-        This page is static files on GitHub Pages, with no server, analytics or tracking.{' '}
-        <a href={`${repo}/tree/main/demo/src`}>Check the code</a>, and use <b>Forget</b> to remove the key.
+        <b>We never store or see your key.</b> It stays in this browser&apos;s local storage.
+        <br />
+        Use <b>Forget</b> to remove the key.
       </p>
-      <p className="hint">
-        Using your own key instead? It needs <b>Places API (New)</b> and <b>Routes API</b>, and its website restrictions must allow{' '}
-        <code>https://ninadsutrave.github.io/*</code>. In a real app, keep the key on your server: the browser is only for trying it out. A
-        separate key with low daily quotas is a good idea.
-      </p>
-      <details className="guide" open={!apiKey}>
+      <details className="guide">
         <summary>No key? Get a free Demo Key from Google, with no billing needed</summary>
         <ol>
           <li>
@@ -124,12 +119,6 @@ function KeyForm({ apiKey, onChange }) {
             </p>
           </li>
         </ol>
-        <p className="hint">
-          A Demo Key covers Places API (New) and Compute Routes, which is everything this page uses (checked on 21 Nov 2026). It
-          doesn&apos;t cover the older Geocoding API that this client&apos;s <code>geocode()</code> calls. It&apos;s free, and when it
-          reaches its daily limit it pauses until the next day instead of charging you. It&apos;s meant for trying things out, not for
-          production.
-        </p>
       </details>
     </form>
   )
