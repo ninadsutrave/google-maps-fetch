@@ -29,6 +29,8 @@ const { routes } = await maps.routes.compute({ origin: 'Paris', destination: 'Am
 
 ```sh
 npm install google-maps-fetch
+# or
+yarn add google-maps-fetch
 ```
 
 It works with `import` and `require` on Node 20 or later, and in Bun, Deno, Cloudflare Workers and Vercel Edge.
