@@ -31,7 +31,22 @@ const { routes } = await maps.routes.compute({ origin: 'Pune', destination: 'Mum
 npm install google-maps-fetch
 ```
 
-Enable the APIs you use on your Google Cloud project (**Places API (New)**, **Routes API**, **Geocoding API**). If your key has API restrictions, add them there too.
+It works with `import` and `require` on Node 20 or later, and in Bun, Deno, Cloudflare Workers and Vercel Edge.
+
+### Set up Google Cloud
+
+1. In a Google Cloud project with billing turned on, enable the APIs you call: **Places API (New)**, **Routes API**, **Geocoding API** and so on. You don't need the legacy Places, Directions or Distance Matrix APIs.
+2. Create an API key for your server. Under _Application restrictions_, choose _IP addresses_ and add your server's addresses; serverless and edge platforms often have no fixed address, so leave it at _None_ there. Under _API restrictions_, allow the APIs from step 1.
+3. Keep the key in an environment variable and use it only on the server. Anyone who has it can run up your bill.
+
+```ts
+import { createClient } from 'google-maps-fetch'
+// or: const { createClient } = require('google-maps-fetch')
+
+const maps = createClient({ key: process.env.GOOGLE_MAPS_KEY! })
+```
+
+A `MapsError` with code `PERMISSION_DENIED`, or `REQUEST_DENIED` from Geocoding and the other older APIs, usually means an API isn't enabled or isn't in the key's API restrictions.
 
 ## Usage
 
