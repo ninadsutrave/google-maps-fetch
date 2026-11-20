@@ -1,5 +1,11 @@
 # google-maps-fetch
 
+## 0.1.5
+
+### Patch Changes
+
+- 73b3276: README: link the google-places-autocomplete-hook demo page.
+
 ## 0.1.4
 
 ### Patch Changes
