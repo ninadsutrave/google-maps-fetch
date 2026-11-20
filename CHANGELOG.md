@@ -1,5 +1,11 @@
 # google-maps-fetch
 
+## 0.1.4
+
+### Patch Changes
+
+- 791ea66: README: step-by-step Google Cloud setup for a server key, and what PERMISSION_DENIED usually means.
+
 ## 0.1.3
 
 ### Patch Changes
