@@ -57,10 +57,10 @@ A `MapsError` with code `PERMISSION_DENIED`, or `REQUEST_DENIED` from Geocoding 
 ```ts
 // autocomplete and details in one billed session
 const session = maps.places.session()
-const { suggestions = [] } = await session.autocomplete({ input: 'Vaishali FC Road' })
+const { suggestions = [] } = await session.autocomplete({ input: 'Eiffel Tower' })
 const place = await session.get(suggestions[0].placePrediction!.placeId) // ends the session
 
-place.formattedAddress // "1218/1, FC Road, ..."
+place.formattedAddress // "Av. Gustave Eiffel, 75007 Paris, France"
 place.location // { latitude: 48.86, longitude: 2.29 }
 
 // more fields cost more; ask for what you need
