@@ -496,6 +496,23 @@ describe('directions', () => {
     })
   })
 
+  it('times can be numeric strings or ISO dates, as the legacy client passed them through', async () => {
+    const { fetch, calls } = mockFetch(() => ({ body: {} }))
+    const client = new Client({ fetch })
+    await client.directions({ params: { key, origin: 'a', destination: 'b', departure_time: '1893488400' } })
+    await client.directions({ params: { key, origin: 'a', destination: 'b', departure_time: '2030-01-01T09:00:00Z' } })
+    const matrix = mockFetch(() => ({ body: [] }))
+    await new Client({ fetch: matrix.fetch }).distancematrix({
+      params: { key, origins: ['a'], destinations: ['b'], mode: 'transit', arrival_time: '1893488400' },
+    })
+    expect(calls[0].body.departureTime).toBe('2030-01-01T09:00:00.000Z')
+    expect(calls[1].body.departureTime).toBe('2030-01-01T09:00:00.000Z')
+    expect(matrix.calls[0].body.arrivalTime).toBe('2030-01-01T09:00:00.000Z')
+    await expect(client.directions({ params: { key, origin: 'a', destination: 'b', departure_time: 'tomorrow' } })).rejects.toThrow(
+      /Can't read "tomorrow" as a time/,
+    )
+  })
+
   it('avoid and transit_mode also work as "|" strings', async () => {
     const { fetch, calls } = mockFetch(() => ({ body: {} }))
     const client = new Client({ fetch })

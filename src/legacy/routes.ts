@@ -12,8 +12,10 @@ interface CommonParams {
   region?: string
   /** metric or imperial */
   units?: string
-  arrival_time?: Date | number
-  departure_time?: Date | number | 'now'
+  /** A Date, seconds since the epoch (number or numeric string), or an ISO date */
+  arrival_time?: Date | number | string
+  /** As arrival_time, or 'now' */
+  departure_time?: Date | number | 'now' | (string & {})
   /** best_guess, pessimistic or optimistic */
   traffic_model?: string
   /** bus, subway, train, tram, rail: an array or separated by "|" */
@@ -40,7 +42,14 @@ const legacyModes: Record<string, string> = { DRIVE: 'DRIVING', WALK: 'WALKING',
 const transitModes: Record<string, string> = { bus: 'BUS', subway: 'SUBWAY', train: 'TRAIN', tram: 'LIGHT_RAIL', rail: 'RAIL' }
 
 // seconds since the epoch, or a Date, to RFC 3339
-const timestamp = (t: Date | number) => new Date(typeof t === 'number' ? t * 1000 : t).toISOString()
+// the legacy API took seconds since the epoch, and the legacy client sent strings such as "1893488400" as they were
+const timestamp = (t: Date | number | string) => {
+  const value = typeof t === 'string' && /^\d+$/.test(t.trim()) ? Number(t) : t
+  const date = new Date(typeof value === 'number' ? value * 1000 : value)
+  if (Number.isNaN(date.getTime()))
+    throw new TypeError(`Can't read ${JSON.stringify(t)} as a time: pass a Date, seconds since the epoch, or an ISO date`)
+  return date.toISOString()
+}
 
 // Pick, not Omit: Omit on a type with an index signature drops the named fields
 type Options = Pick<
