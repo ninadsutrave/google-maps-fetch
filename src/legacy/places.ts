@@ -53,9 +53,7 @@ const primaryTypes = (types: string | string[] | undefined) => {
 
 const regionCodes = (components: string[] | string | undefined) => {
   if (!components) return undefined
-  const list = (toList(components) ?? [])
-    .map((c) => /^country:(.+)$/.exec(c)?.[1])
-    .filter((c): c is string => !!c)
+  const list = (toList(components) ?? []).map((c) => /^country:(.+)$/.exec(c)?.[1]).filter((c): c is string => !!c)
   return list.length ? list : undefined
 }
 

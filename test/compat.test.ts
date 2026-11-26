@@ -86,7 +86,9 @@ describe('placeAutocomplete', () => {
     const types = ['locality', 'neighborhood'] as unknown as PlaceAutocompleteType
     await client.placeAutocomplete({ params: { key, input: 'a', types } })
     await client.placeAutocomplete({ params: { key, input: 'a', types: 'locality|neighborhood' } })
-    await client.placeAutocomplete({ params: { key, input: 'a', types: ['address'] as unknown as PlaceAutocompleteType, components: ['country:us'] } })
+    await client.placeAutocomplete({
+      params: { key, input: 'a', types: ['address'] as unknown as PlaceAutocompleteType, components: ['country:us'] },
+    })
     expect(calls[0].body.includedPrimaryTypes).toEqual(['locality', 'neighborhood'])
     expect(calls[1].body.includedPrimaryTypes).toEqual(['locality', 'neighborhood'])
     expect(calls[2].body.includedPrimaryTypes).toEqual(['street_address', 'premise', 'subpremise', 'route'])
