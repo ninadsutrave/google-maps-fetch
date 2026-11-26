@@ -1,5 +1,11 @@
 # google-maps-fetch
 
+## 0.1.8
+
+### Patch Changes
+
+- 86cef29: `/compat` reads `departure_time` and `arrival_time` given as strings, as the legacy client passed them through: seconds since the epoch (`"1893488400"`) or an ISO date. A numeric string used to throw `Invalid time value`; an unreadable time now throws an error that names the value.
+
 ## 0.1.7
 
 ### Patch Changes
