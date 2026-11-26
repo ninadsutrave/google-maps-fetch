@@ -16,6 +16,7 @@ import {
   priceRange,
   strip,
   toLatLng,
+  toList,
   toLiteral,
   type LatLngBounds,
   type LatLngLiteral,
@@ -33,8 +34,8 @@ export interface PlaceAutocompleteParams {
   radius?: number
   language?: string
   region?: string
-  /** e.g. "(cities)", "address", "establishment", or several separated by "|" */
-  types?: string
+  /** e.g. "(cities)", "address", "establishment", or several as an array or separated by "|" */
+  types?: string | string[]
   /** e.g. ["country:in", "country:np"] */
   components?: string[] | string
   strictbounds?: boolean
@@ -43,17 +44,17 @@ export interface PlaceAutocompleteParams {
 const addressTypes = ['street_address', 'premise', 'subpremise', 'route']
 
 // "geocode" and "establishment" have no primary-type equivalent; leaving the filter off is the closest match
-const primaryTypes = (types: string | undefined) => {
-  if (!types) return undefined
-  const list = types.split('|')
+const primaryTypes = (types: string | string[] | undefined) => {
+  const list = toList(types)
+  if (!list) return undefined
   if (list.some((t) => t === 'geocode' || t === 'establishment')) return undefined
   return [...new Set(list.flatMap((t) => (t === 'address' ? addressTypes : [t])))].slice(0, 5)
 }
 
 const regionCodes = (components: string[] | string | undefined) => {
   if (!components) return undefined
-  const list = (Array.isArray(components) ? components : components.split('|'))
-    .map((c) => /^country:(.+)$/.exec(c.trim())?.[1])
+  const list = (toList(components) ?? [])
+    .map((c) => /^country:(.+)$/.exec(c)?.[1])
     .filter((c): c is string => !!c)
   return list.length ? list : undefined
 }
@@ -365,7 +366,8 @@ export interface TextSearchParams {
   maxprice?: number
   opennow?: boolean
   pagetoken?: string
-  type?: string
+  /** The legacy API used only the first type */
+  type?: string | string[]
   /** Not in the legacy API: legacy field names (or new ones) to fetch instead of the defaults */
   fields?: string[]
 }
@@ -376,7 +378,7 @@ export const textSearchRequest = (p: TextSearchParams): SearchTextRequest =>
     regionCode: p.region,
     languageCode: p.language,
     locationBias: p.location ? { circle: { center: toLatLng(p.location), radius: p.radius ?? 0 } } : undefined,
-    includedType: p.type,
+    includedType: toList(p.type)?.[0],
     openNow: p.opennow,
     priceLevels: priceRange(p.minprice, p.maxprice),
     pageToken: p.pagetoken,
@@ -393,7 +395,8 @@ export interface PlacesNearbyParams {
   opennow?: boolean
   /** "prominence" or "distance" */
   rankby?: string
-  type?: string
+  /** The legacy API used only the first type */
+  type?: string | string[]
   pagetoken?: string
   fields?: string[]
 }
@@ -405,13 +408,14 @@ export const nearbyPlan = (p: PlacesNearbyParams): NearbyPlan => {
   const center = toLatLng(p.location)
   const radius = p.rankby === 'distance' || p.radius == null ? 50_000 : p.radius
   const byDistance = p.rankby === 'distance'
+  const type = toList(p.type)?.[0]
   if (p.keyword || p.name || p.opennow || p.minprice != null || p.maxprice != null || p.pagetoken) {
     return {
       kind: 'text',
       request: strip({
-        textQuery: [p.keyword, p.name].filter(Boolean).join(' ') || (p.type ?? 'places').replace(/_/g, ' '),
+        textQuery: [p.keyword, p.name].filter(Boolean).join(' ') || (type ?? 'places').replace(/_/g, ' '),
         locationRestriction: circleToRectangle(center, radius),
-        includedType: p.type,
+        includedType: type,
         openNow: p.opennow,
         priceLevels: priceRange(p.minprice, p.maxprice),
         rankPreference: byDistance ? 'DISTANCE' : undefined,
@@ -424,7 +428,7 @@ export const nearbyPlan = (p: PlacesNearbyParams): NearbyPlan => {
     kind: 'nearby',
     request: strip({
       locationRestriction: { circle: { center, radius } },
-      includedTypes: p.type ? [p.type] : undefined,
+      includedTypes: type ? [type] : undefined,
       rankPreference: byDistance ? 'DISTANCE' : 'POPULARITY',
       languageCode: p.language,
     }),

@@ -80,6 +80,19 @@ describe('placeAutocomplete', () => {
     expect(calls[2].body).not.toHaveProperty('includedPrimaryTypes')
   })
 
+  it('list params work as arrays or "|" strings, as the legacy client sent both', async () => {
+    const { fetch, calls } = mockFetch(() => ({ body: {} }))
+    const client = new Client({ fetch })
+    const types = ['locality', 'neighborhood'] as unknown as PlaceAutocompleteType
+    await client.placeAutocomplete({ params: { key, input: 'a', types } })
+    await client.placeAutocomplete({ params: { key, input: 'a', types: 'locality|neighborhood' } })
+    await client.placeAutocomplete({ params: { key, input: 'a', types: ['address'] as unknown as PlaceAutocompleteType, components: ['country:us'] } })
+    expect(calls[0].body.includedPrimaryTypes).toEqual(['locality', 'neighborhood'])
+    expect(calls[1].body.includedPrimaryTypes).toEqual(['locality', 'neighborhood'])
+    expect(calls[2].body.includedPrimaryTypes).toEqual(['street_address', 'premise', 'subpremise', 'route'])
+    expect(calls[2].body.includedRegionCodes).toEqual(['us'])
+  })
+
   it('returns predictions in the legacy shape', async () => {
     const { fetch } = mockFetch(() => ({ body: { suggestions: [puneSuggestion, { queryPrediction: { text: { text: 'pune food' } } }] } }))
     const res = await new Client({ fetch }).placeAutocomplete({ params: { key, input: 'Pun' } })
@@ -332,6 +345,16 @@ describe('searches', () => {
     expect(res.data.results).toEqual([{ place_id: 'n' }])
   })
 
+  it('placesNearby and textSearch take the first of several types, as the legacy API did', async () => {
+    const { fetch, calls } = mockFetch(() => ({ body: { places: [] } }))
+    const client = new Client({ fetch })
+    const type = ['cafe', 'bakery'] as unknown as string
+    await client.placesNearby({ params: { key, location: '18.5,73.8', radius: 800, type } })
+    await client.textSearch({ params: { key, query: 'coffee', type: 'cafe|bakery' } })
+    expect(calls[0].body.includedTypes).toEqual(['cafe'])
+    expect(calls[1].body.includedType).toBe('cafe')
+  })
+
   it('placesNearby with a keyword uses Text Search inside the circle', async () => {
     const { fetch, calls } = mockFetch(() => ({ body: { places: [], nextPageToken: 't' } }))
     const res = await new Client({ fetch }).placesNearby({
@@ -469,6 +492,17 @@ describe('directions', () => {
       arrivalTime: '2030-01-01T09:00:00.000Z',
       transitPreferences: { allowedTravelModes: ['BUS', 'LIGHT_RAIL'], routingPreference: 'LESS_WALKING' },
     })
+  })
+
+  it('avoid and transit_mode also work as "|" strings', async () => {
+    const { fetch, calls } = mockFetch(() => ({ body: {} }))
+    const client = new Client({ fetch })
+    await client.directions({ params: { key, origin: 'a', destination: 'b', avoid: 'tolls|ferries' as unknown as TravelRestriction[] } })
+    await client.directions({
+      params: { key, origin: 'a', destination: 'b', mode: 'transit', transit_mode: 'bus|rail' as unknown as string[] },
+    })
+    expect(calls[0].body.routeModifiers).toEqual({ avoidTolls: true, avoidFerries: true })
+    expect(calls[1].body.transitPreferences).toEqual({ allowedTravelModes: ['BUS', 'RAIL'] })
   })
 
   it('returns routes in the legacy shape, with legs in the optimized order', async () => {

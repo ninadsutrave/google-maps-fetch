@@ -1,12 +1,13 @@
 // Legacy Directions and Distance Matrix requests and responses, mapped to and from the Routes API
 import type { ComputeRouteMatrixRequest, ComputeRoutesRequest, Route, RouteMatrixElement } from '../types'
 import { seconds } from '../util'
-import { addressOf, strip, toLiteral, toWaypoint, type LatLngBounds, type LatLngLiteral, type LegacyLatLng } from './params'
+import { addressOf, strip, toList, toLiteral, toWaypoint, type LatLngBounds, type LatLngLiteral, type LegacyLatLng } from './params'
 
 interface CommonParams {
   /** driving (default), walking, bicycling or transit */
   mode?: string
-  avoid?: string[]
+  /** tolls, highways, ferries, indoor: an array or separated by "|" */
+  avoid?: string | string[]
   language?: string
   region?: string
   /** metric or imperial */
@@ -15,8 +16,8 @@ interface CommonParams {
   departure_time?: Date | number | 'now'
   /** best_guess, pessimistic or optimistic */
   traffic_model?: string
-  /** bus, subway, train, tram, rail */
-  transit_mode?: string[]
+  /** bus, subway, train, tram, rail: an array or separated by "|" */
+  transit_mode?: string | string[]
   /** less_walking or fewer_transfers */
   transit_routing_preference?: string
 }
@@ -72,17 +73,18 @@ const routeOptions = (p: CommonParams): { options: Options; trafficAware: boolea
     if (p.departure_time !== undefined && p.departure_time !== 'now') options.departureTime = timestamp(p.departure_time)
     if (p.arrival_time !== undefined) options.arrivalTime = timestamp(p.arrival_time)
     const preferences = strip({
-      allowedTravelModes: p.transit_mode?.map((m) => transitModes[m] ?? m.toUpperCase()),
+      allowedTravelModes: toList(p.transit_mode)?.map((m) => transitModes[m] ?? m.toUpperCase()),
       routingPreference: p.transit_routing_preference?.toUpperCase(),
     })
     if (Object.keys(preferences).length) options.transitPreferences = preferences
   }
-  if (p.avoid?.length) {
+  const avoid = toList(p.avoid)
+  if (avoid) {
     options.routeModifiers = strip({
-      avoidTolls: p.avoid.includes('tolls') || undefined,
-      avoidHighways: p.avoid.includes('highways') || undefined,
-      avoidFerries: p.avoid.includes('ferries') || undefined,
-      avoidIndoor: p.avoid.includes('indoor') || undefined,
+      avoidTolls: avoid.includes('tolls') || undefined,
+      avoidHighways: avoid.includes('highways') || undefined,
+      avoidFerries: avoid.includes('ferries') || undefined,
+      avoidIndoor: avoid.includes('indoor') || undefined,
     })
   }
   // the legacy APIs answered in English by default; the Routes API instead guesses from the origin

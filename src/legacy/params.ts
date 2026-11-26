@@ -144,6 +144,13 @@ export const priceLevelNumber = (level: string | undefined) => {
   return i === -1 ? undefined : i
 }
 
+/** The legacy client sent arrays joined with "|", so a list param could be either form */
+export const toList = (value: string | readonly string[] | undefined): string[] | undefined => {
+  if (value === undefined) return undefined
+  const list = (typeof value === 'string' ? value.split('|') : [...value]).map((v) => v.trim()).filter(Boolean)
+  return list.length ? list : undefined
+}
+
 /** Drops undefined values, so requests and responses only carry what was set */
 export const strip = <T extends Record<string, unknown>>(o: T): T => {
   for (const k of Object.keys(o)) if (o[k] === undefined) delete o[k]
