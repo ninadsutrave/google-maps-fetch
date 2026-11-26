@@ -1,6 +1,6 @@
 {
   "name": "google-maps-fetch",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "Small fetch-based client for Google Maps Platform web APIs (Places API (New), Routes, Geocoding, Address Validation, Elevation, Time Zone, Geolocation, Roads) that runs anywhere fetch does, with a drop-in replacement for @googlemaps/google-maps-services-js",
   "license": "MIT",
   "author": {

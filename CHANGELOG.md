@@ -1,5 +1,11 @@
 # google-maps-fetch
 
+## 0.1.7
+
+### Patch Changes
+
+- 39a1679: `/compat` accepts list params the way the legacy client did, as an array or a `|`-separated string: `types` in `placeAutocomplete` (an array used to throw `types.split is not a function`), `type` in `placesNearby` and `textSearch` (only the first is used, as before), and `avoid` and `transit_mode` in `directions` and `distancematrix`.
+
 ## 0.1.6
 
 ### Patch Changes
