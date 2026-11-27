@@ -1,5 +1,11 @@
 # google-maps-fetch
 
+## 0.1.9
+
+### Patch Changes
+
+- a73f7de: Add npm keywords so the package shows up in more searches.
+
 ## 0.1.8
 
 ### Patch Changes
